@@ -8,6 +8,10 @@ using Printf
 using CSV
 using DataFrames
 using Downloads
+using BSON: @save, @load
+using Zygote
+using Zygote: gradient
+using JSON
 
 # Export models
 export FICNN, PICNN
@@ -20,6 +24,9 @@ export load_adult_income, preprocess_adult_income, split_data
 
 # Export utility functions
 export save_model, load_model
+
+# Export metrics functions
+export save_training_metrics
 
 # Include model definitions
 include("models/base.jl")

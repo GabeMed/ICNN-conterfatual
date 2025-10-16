@@ -43,28 +43,33 @@ function FICNN(n_features::Int, n_labels::Int;
                 input_insertion_layers, hidden_layers, n_gradient_iterations)
 end
 
+# Define trainable parameters for Flux
+Flux.@layer FICNN trainable=(input_insertion_layers, hidden_layers)
+
 """
     (model::FICNN)(x, y; reuse=false)
 
 Forward pass through the FICNN model.
 """
 function (model::FICNN)(x, y; reuse=false)
-    xy = hcat(x, y)
+    xy = hcat(x, y)  # (batch, features+labels)
+    xy_t = xy'       # Transpose to (features+labels, batch) for Flux
     prev_z = nothing
 
     for (i, sz) in enumerate(model.layers)
-        z_components = []
-        push!(z_components, model.input_insertion_layers[i](xy))
-
+        # Input insertion component
+        z_total = model.input_insertion_layers[i](xy_t)
+        
+        # Add hidden layer component if not first layer
         if i > 1 && prev_z !== nothing
-            push!(z_components, model.hidden_layers[i-1](prev_z))
+            z_total = z_total .+ model.hidden_layers[i-1](prev_z)
         end
 
-        z_total = sum(z_components)
+        # Apply activation
         prev_z = sz != 1 ? relu.(z_total) : z_total
     end
 
-    return prev_z
+    return prev_z'  # Transpose back to (batch, output)
 end
 
 include("../training/trainer.jl")  # Include training-specific functions
