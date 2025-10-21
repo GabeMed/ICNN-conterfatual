@@ -18,6 +18,7 @@ export FICNN, PICNN
 
 # Export training functions
 export train!, predict, mse_loss
+export enforcing_convexity!, initialize_convex!
 
 # Export data loading functions
 export load_adult_income, preprocess_adult_income, split_data

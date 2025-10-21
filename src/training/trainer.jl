@@ -1,48 +1,55 @@
 """
     enforcing_convexity!(model::AbstractICNN)
 
-Enforces convexity by ensuring all weights in hidden layers are non-negative.
+Projects W^(z) weights to be non-negative to maintain convexity in y.
+Must be called after each training step.
 """
 function enforcing_convexity!(model::AbstractICNN)
-    for layer in model.hidden_layers
-        if layer !== nothing
-            layer.weight .= max.(layer.weight, 0.0)
-        end
+    @inbounds for layer in model.hidden_layers
+        layer.weight .= max.(layer.weight, 0.0f0)
     end
 end
 
 """
     initialize_convex!(model::AbstractICNN)
 
-Initializes the model weights to ensure convexity.
+Initializes W^(z) weights to small positive values.
+Should be called before training starts
 """
 function initialize_convex!(model::AbstractICNN)
-    for layer in model.hidden_layers
-        if layer !== nothing
-            layer.weight .= abs.(layer.weight) ./ 10.0
-        end
+    @inbounds for layer in model.hidden_layers
+        # small positive init
+        layer.weight .= abs.(layer.weight) ./ 10.0f0
     end
 end
 
 """
-    predict(model::AbstractICNN, x, y_init; learning_rate=0.01, momentum=0.9)
+    predict(model::AbstractICNN, x, y_init; learning_rate=0.01f0, momentum=0.9f0)
 
-Predict output y for input x using gradient descent.
+Performs inference by minimizing the energy function f(x, y) w.r.t. y via gradient descent.
+
+Given observed input x, finds optimal y:
+    y* = argmin_y f(x, y)
+
+Using gradient descent with momentum starting from y_init.
 """
-function predict(model::AbstractICNN, x, y_init; learning_rate=0.01, momentum=0.9)
+function predict(model::AbstractICNN, x, y_init; 
+                learning_rate=0.01f0, 
+                momentum=0.9f0)
+    
     x = Float32.(x)
     y = Float32.(copy(y_init))
     velocity = zero(y)
     
-    for _ in 1:model.n_gradient_iterations
-        # Compute gradient of energy with respect to y
-        grad = Zygote.ignore_derivatives() do
-            Zygote.gradient(y_i -> sum(model(x, y_i)), y)[1]
-        end
+    for iter in 1:model.n_gradient_iterations
+        # Compute ∇_y f(x, y) via pullback (differentiable for the outer grad)
+        _, back = Zygote.pullback(y -> sum(model(x, y)), y)
+        grad_y = back(1f0)[1]
         
-        previous_vel = velocity
-        velocity = momentum .* previous_vel .- learning_rate .* grad
-        y = y .- momentum .* previous_vel .+ (1.0 + momentum) .* velocity
+        # Momentum update 
+        prev_velocity = velocity
+        velocity = momentum .* prev_velocity .- learning_rate .* grad_y
+        y = y .- momentum .* prev_velocity .+ (1.0f0 + momentum) .* velocity
     end
     
     return y
@@ -51,16 +58,24 @@ end
 """
     mse_loss(model::AbstractICNN, x, y_init, y_true)
 
-Compute Mean Squared Error loss between predicted and true values.
+Computes MSE loss between predicted y and true y.
+
+The prediction is obtained by minimizing the energy function:
+    y_pred = argmin_y f(x, y)
+
+Then we compute MSE(y_pred, y_true).
+
 """
 function mse_loss(model::AbstractICNN, x, y_init, y_true)
     x = Float32.(x)
+    y_init = Float32.(y_init)
     y_true = Float32.(y_true)
-    # Evaluate energy at true y
-    energy_true = model(x, y_true)
-    # We want low energy for correct (x, y) pairs
-    loss = mean(energy_true .^ 2)
-    return loss, y_true
+    
+    # Minimize energy to get prediction 
+    y_pred = predict(model, x, y_init)
+    
+    # MSE loss
+    return mean((y_pred .- y_true) .^ 2)
 end
 
 """
@@ -70,7 +85,7 @@ end
 Train the ICNN model using mini-batch gradient descent.
 """
 function train!(model::AbstractICNN, data_x, data_y, epochs::Int = 100;
-                learning_rate=0.001, batch_size=32, save_dir = "./tmp",
+                learning_rate=0.001f0, batch_size=32, save_dir = "./tmp",
                 is_convex=true, X_test=nothing, y_test=nothing, collect_metrics=false)
     # Create save directory and log file
     mkpath(save_dir)
@@ -101,7 +116,7 @@ function train!(model::AbstractICNN, data_x, data_y, epochs::Int = 100;
         initialize_convex!(model)
     end
 
-    opt = Flux.setup(ADAM(learning_rate), model)
+    opt = Flux.setup(Adam(learning_rate), model)
     
     best_mse = Inf
     n_samples = size(data_x, 1)
@@ -123,15 +138,13 @@ function train!(model::AbstractICNN, data_x, data_y, epochs::Int = 100;
             y_batch = data_y[batch_indexes, :]
             y_init = fill(0.5f0, size(y_batch))
 
-            batch_loss = 0.0            
-            gs = gradient(model) do model
-                loss, _ = mse_loss(model, x_batch, y_init, y_batch)
-                batch_loss = loss
-                loss
+            # Flux.withgradient returns val and grads
+            val, grads = Flux.withgradient(model) do m
+                mse_loss(m, x_batch, y_init, y_batch)
             end
-
-            Flux.update!(opt, model, gs[1])
-            epoch_loss += batch_loss
+            
+            Flux.update!(opt, model, grads[1])
+            epoch_loss += val
         end
 
         epoch_loss /= n_batches
@@ -141,14 +154,14 @@ function train!(model::AbstractICNN, data_x, data_y, epochs::Int = 100;
         end
 
         # Compute test metrics if test set provided
-        test_loss = 0.0
-        test_accuracy = 0.0
+        test_loss = 0.0f0
+        test_accuracy = 0.0f0
         if X_test !== nothing && y_test !== nothing
             y_init_test = fill(0.5f0, size(y_test))
-            # Use predict for evaluation (30 iterations)
+            # Use predict for evaluation
             y_pred_test = predict(model, Float32.(X_test), y_init_test)
             test_loss = mean((y_pred_test .- Float32.(y_test)) .^ 2)
-            test_accuracy = mean((y_pred_test .> 0.5) .== Float32.(y_test))
+            test_accuracy = mean((y_pred_test .> 0.5f0) .== Float32.(y_test))
             
             if collect_metrics
                 push!(metrics["test_losses"], test_loss)
@@ -203,15 +216,36 @@ function train!(model::AbstractICNN, data_x, data_y, epochs::Int = 100;
     
     # Collect weight samples for comparison
     if collect_metrics
-        for (i, layer) in enumerate(model.input_insertion_layers)
+        # Sample from x input layers
+        for (i, layer) in enumerate(model.input_x_layers)
             weights = vec(layer.weight)
-            metrics["weights_sample"]["input_layer_$i"] = weights[1:min(20, length(weights))]
+            sample_size = min(20, length(weights))
+            metrics["weights_sample"]["input_x_$i"] =
+                Float64.(weights[1:sample_size])
         end
+        
+        # Sample from y input layers
+        for (i, layer) in enumerate(model.input_y_layers)
+            weights = vec(layer.weight)
+            sample_size = min(20, length(weights))
+            metrics["weights_sample"]["input_y_$i"] =
+                Float64.(weights[1:sample_size])
+        end
+
+        # Sample from hidden layers (W^(z) - should be non-negative)
         for (i, layer) in enumerate(model.hidden_layers)
-            if layer !== nothing
-                weights = vec(layer.weight)
-                metrics["weights_sample"]["hidden_layer_$i"] = weights[1:min(20, length(weights))]
+            weights = vec(layer.weight)
+            sample_size = min(20, length(weights))
+            metrics["weights_sample"]["hidden_layer_$i"] =
+                Float64.(weights[1:sample_size])
+
+            # Verify non-negativity (important!)
+            n_negative = sum(weights .< -1e-6)  # tolerance
+            if n_negative > 0
+                @warn "Hidden layer $i has $n_negative significantly negative weights!"
             end
+            @printf("  Hidden layer %d: min=%.6f, max=%.6f\n",
+                    i, minimum(weights), maximum(weights))
         end
         
         # Save metrics to JSON
