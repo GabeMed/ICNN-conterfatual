@@ -1,6 +1,7 @@
 using CSV
 using DataFrames
-using Downloads   
+using Downloads
+using Random   
 
 """
     load_adult_income()
@@ -33,78 +34,97 @@ function load_adult_income()
     return df
 end
 
-"""
-    preprocess_adult_income(df::DataFrame)
+struct MinMaxScaler
+    xmin::Vector{Float64}
+    xmax::Vector{Float64}
+end
 
-Preprocess the Adult Income dataset:
-1. Clean whitespace
-2. Remove missing values
-3. Convert categorical variables to one-hot encoding
-4. Normalize numerical features
+function fit_minmax(X::AbstractMatrix, num_features::Int=6)
+    xmin = [minimum(X[:, j]) for j in 1:num_features]
+    xmax = [maximum(X[:, j]) for j in 1:num_features]
+    return MinMaxScaler(xmin, xmax)
+end
+
+function transform!(X::AbstractMatrix, scaler::MinMaxScaler)
+    for j in 1:length(scaler.xmin)
+        r = scaler.xmax[j] - scaler.xmin[j]
+        if r > 0
+            X[:, j] = (X[:, j] .- scaler.xmin[j]) ./ r
+        else
+            X[:, j] .= 0.0
+        end
+    end
+    return X
+end
+
+"""
+Preprocesses Adult Income: min-max [0,1] for numerics, one-hot for categoricals.
+Returns: (X, y, feature_names, feature_info)
 """
 function preprocess_adult_income(df::DataFrame)
-    # Clean whitespace
     for col in names(df)
         if eltype(df[!, col]) <: AbstractString
             df[!, col] = strip.(df[!, col])
         end
     end
-    
-    # Remove missing values
+
     for col in names(df)
         if eltype(df[!, col]) <: AbstractString
             df = df[df[!, col] .!= "?", :]
         end
     end
-    
-    # Convert target to binary
+
     df[!, :income_binary] = [occursin(">50K", x) ? 1.0f0 : 0.0f0 for x in df.income]
-    
-    # Select features
-    numeric_features = ["age", "fnlwgt", "education_num", "capital_gain", 
+
+    numeric_features = ["age", "fnlwgt", "education_num", "capital_gain",
                        "capital_loss", "hours_per_week"]
-    categorical_features = ["workclass", "marital_status", "occupation", 
+    categorical_features = ["workclass", "marital_status", "occupation",
                           "relationship", "race", "sex", "native_country"]
-    
+
+    immutable_features = ["race", "sex", "native_country"]
+
     feature_matrix = []
     feature_names = []
-    
-    # Add numeric features
+    feature_types = []
+    feature_groups = Dict{String, Vector{Int}}()
+
     for feat in numeric_features
         push!(feature_matrix, Float32.(df[!, feat]))
         push!(feature_names, feat)
+        push!(feature_types, :numeric)
     end
-    
-    # Add categorical features (one-hot)
+
     for feat in categorical_features
         unique_vals = unique(df[!, feat])
+        group_indices = []
         for val in unique_vals[2:end]
             binary_feat = Float32.(df[!, feat] .== val)
             push!(feature_matrix, binary_feat)
-            push!(feature_names, "$(feat)_$(val)")
+            fname = "$(feat)_$(val)"
+            push!(feature_names, fname)
+            push!(feature_types, :categorical)
+            push!(group_indices, length(feature_names))
         end
+        feature_groups[feat] = group_indices
     end
-    
+
     X = hcat(feature_matrix...)'
-    
-    # Normalize numeric features
-    for i in 1:6
-        m = mean(X[i, :])
-        sigma = std(X[i, :])
-        if sigma > 0
-            X[i, :] = (X[i, :] .- m) ./ sigma
-        end
-    end
-    
     X = X'
     y = reshape(df.income_binary, :, 1)
-    
+
+    feature_info = Dict(
+        :n_numeric => length(numeric_features),
+        :feature_names => feature_names,
+        :feature_types => feature_types,
+        :feature_groups => feature_groups,
+        :immutable_features => immutable_features
+    )
+
     println("Preprocessing complete:")
-    println("  Features: $(size(X, 2))")
+    println("  Features: $(size(X, 2)) ($(length(numeric_features)) numeric, $(length(feature_names) - length(numeric_features)) categorical)")
     println("  Samples: $(size(X, 1))")
-    println("  Positive class ratio: $(mean(y))")
-    
-    return X, y, feature_names
+
+    return X, y, feature_names, feature_info
 end
 
 """

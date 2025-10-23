@@ -15,13 +15,26 @@ function main()
     # Load and preprocess the Adult Income dataset
     println("Loading dataset...")
     df = load_adult_income()
-    X, y, feature_names = preprocess_adult_income(df)
+    X, y, feature_names, feature_info = preprocess_adult_income(df)
     X = Float32.(X)
     y = Float32.(y)
 
     # Split the data into training and test sets (same as Python: 80/20)
     println("\nSplitting data...")
     X_train, y_train, X_test, y_test = split_data(X, y, train_ratio=0.8, seed=42)
+
+    # Fit MinMaxScaler on TRAINING data only (prevent data leakage)
+    println("\nNormalizing features with Min-Max [0,1]...")
+    scaler = fit_minmax(X_train, feature_info[:n_numeric])
+    transform!(X_train, scaler)
+    transform!(X_test, scaler)
+    println("  Scaler fitted on train, applied to train and test")
+
+    # Save scaler for later use in counterfactual generation
+    save_dir = joinpath(@__DIR__, "results_julia")
+    mkpath(save_dir)
+    using BSON
+    BSON.@save joinpath(save_dir, "scaler.bson") scaler feature_info
 
     println("\nTraining set size: $(size(X_train, 1)) samples")
     println("Test set size: $(size(X_test, 1)) samples")
@@ -115,8 +128,7 @@ function main()
     else
         println("   ⚠️  Using nested AD (broken, don't use)")
     end
-    
-    save_dir = joinpath(@__DIR__, "results_julia")
+
     model = train!(
         model,
         X_train,

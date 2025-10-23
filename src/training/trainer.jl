@@ -29,17 +29,17 @@ function predict(model::AbstractICNN, x, y_init;
         yi = yi .- momentum .* prev_vi .+ (1.0f0 + momentum) .* vi
         
         if project_y
-            yi = clamp.(yi, 0.0f0, 1.0f0)
+            yi = clamp.(yi, 0.0f0, 1.0f0) # -> Project y  to [0, 1] for binary classification
         end
     end
 
     return yi
 end
 
-"""MSE loss with nested AD (not paper-compliant for training)"""
+"""MSE loss with nested AD"""
 function mse_loss(model::AbstractICNN, x, y_init, y_true)
     y_pred = predict(model, Float32.(x), Float32.(y_init))
-    return mean((y_pred .- Float32.(y_true)) .^ 2)
+    return mean((y_pred .- Float32.(y_true)) .^ 2) # Change to other loss functions that makes more sense 
 end
 
 """

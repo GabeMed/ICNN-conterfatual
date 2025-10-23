@@ -131,4 +131,3 @@ function (model::FICNN)(x, y; reuse=false)
 end
 
 include("../training/trainer.jl")  # Include training-specific functions
-include("../training/implicit_predict.jl")  # Include implicit differentiation
