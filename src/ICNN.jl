@@ -12,6 +12,7 @@ using BSON: @save, @load
 using Zygote
 using Zygote: gradient
 using JSON
+using ImplicitDifferentiation
 
 # Export models
 export FICNN, PICNN
@@ -29,6 +30,9 @@ export save_model, load_model
 # Export metrics functions
 export save_training_metrics
 
+# Export implicit differentiation functions
+export predict_implicit, solve_argmin_y
+
 # Include model definitions
 include("models/base.jl")
 include("models/ficnn.jl")
@@ -38,6 +42,7 @@ include("data/adult_income.jl")
 
 # Include training utilities
 include("training/trainer.jl")
+include("training/implicit_predict.jl")
 
 # Include utilities
 include("utils/io.jl")
