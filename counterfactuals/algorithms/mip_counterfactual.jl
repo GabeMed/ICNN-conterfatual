@@ -9,7 +9,7 @@ using Printf
 Builds FICNN constraints in JuMP using epigraph ReLU (z >= a, z >= 0).
 Returns scalar output variable.
 """
-function build_ficnn_constraints!(jump_model::Model, icnn_model::FICNN,
+function neural_network_ficnn!(jump_model::Model, icnn_model::FICNN,
                                    x::Vector{VariableRef}, y_target::Float32)
     n_layers = length(icnn_model.layers)
 
@@ -75,18 +75,11 @@ function build_counterfactual_model_icnn(icnn_model::FICNN, y_target::Float32,
     feature_types = isnothing(feature_info) ? fill(:numeric, n_features) : feature_info[:feature_types]
     feature_groups = isnothing(feature_info) ? Dict{String, Vector{Int}}() : feature_info[:feature_groups]
 
-    x = Vector{VariableRef}(undef, n_features)
-    for i in 1:n_features
-        if feature_types[i] == :numeric
-            x[i] = @variable(model, lower_bound=0.0, upper_bound=1.0)
-        else
-            x[i] = @variable(model, binary=true)
-        end
-    end
+    @variable(model, 0 <= x[i=1:n_features] <= 1)
 
     @variable(model, x_factual[i=1:n_features])
 
-    y_pred = build_ficnn_constraints!(model, icnn_model, x, y_target)
+    y_pred = neural_network_ficnn!(model, icnn_model, x, y_target)
 
     @variable(model, delta_pos[i=1:n_features] >= 0)
     @variable(model, delta_neg[i=1:n_features] >= 0)
@@ -209,6 +202,17 @@ function generate_counterfactual(icnn_model::FICNN, x_factual::Vector{Float32},
         num_changed = length(changed_indices)
 
         println("✓ Found: dist=$(round(distance, digits=4)), changed=$num_changed/$(n_features), pred=$(round(y_pred_val, digits=3)), time=$(round(solve_time, digits=2))s")
+
+        if !isnothing(feature_info) && num_changed > 0
+            feature_names = feature_info[:feature_names]
+            println("\nChanged features:")
+            for idx in changed_indices
+                fname = feature_names[idx]
+                factual_val = x_factual[idx]
+                cf_val = x_cf[idx]
+                println("  $(fname): $(round(factual_val, digits=3)) → $(round(cf_val, digits=3))")
+            end
+        end
 
         return Dict(
             :counterfactual => Float32.(x_cf),

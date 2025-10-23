@@ -47,7 +47,7 @@ function main()
     end
     
     # ========================================
-    # PART 2: Load real test data (already normalized!)
+    # PART 2: Load real test data 
     # ========================================
     println("\n📊 Loading test data...")
 
@@ -100,11 +100,11 @@ function main()
     results = Dict()
 
     # Configuration 1: Light sparsity
-    println("\n### Config 1: Light sparsity (5.0) ###")
+    println("\n### Config 1: Light sparsity (0.01) ###")
     try
         result = generate_counterfactual(
             icnn_model, x_factual, y_target;
-            alpha=2.0, sparsity_weight=5.0, time_limit=60.0, feature_info=feature_info
+            alpha=2.0, sparsity_weight=0.01, time_limit=60.0, feature_info=feature_info
         )
         results[:light_sparsity] = result
     catch e
@@ -113,11 +113,11 @@ function main()
     end
 
     # Configuration 2: Medium sparsity
-    println("\n### Config 2: Medium sparsity (20.0) ###")
+    println("\n### Config 2: Medium sparsity (0.1) ###")
     try
         result = generate_counterfactual(
             icnn_model, x_factual, y_target;
-            alpha=2.0, sparsity_weight=20.0, time_limit=60.0, feature_info=feature_info
+            alpha=2.0, sparsity_weight=0.1, time_limit=60.0, feature_info=feature_info
         )
         results[:medium_sparsity] = result
     catch e
@@ -126,11 +126,11 @@ function main()
     end
 
     # Configuration 3: Strong sparsity
-    println("\n### Config 3: Strong sparsity (80.0) ###")
+    println("\n### Config 3: Strong sparsity (1.0) ###")
     try
         result = generate_counterfactual(
             icnn_model, x_factual, y_target;
-            alpha=2.0, sparsity_weight=80.0, time_limit=60.0, feature_info=feature_info
+            alpha=2.0, sparsity_weight=1.0, time_limit=60.0, feature_info=feature_info
         )
         results[:strong_sparsity] = result
     catch e
@@ -157,21 +157,6 @@ function main()
         if haskey(results, config) && results[config][:status] in [MOI.OPTIMAL, MOI.FEASIBLE_POINT]
             r = results[config]
             println("$(config_labels[i]): dist=$(round(r[:distance], digits=4)), changed=$(r[:num_changed]), pred=$(round(r[:prediction], digits=3)), time=$(round(r[:solve_time], digits=2))s")
-        end
-    end
-
-    if haskey(results, :light_sparsity) && results[:light_sparsity][:status] in [MOI.OPTIMAL, MOI.FEASIBLE_POINT]
-        baseline = results[:light_sparsity]
-        println("\nSparsity tradeoff:")
-        for config in [:medium_sparsity, :strong_sparsity]
-            if haskey(results, config) && results[config][:status] in [MOI.OPTIMAL, MOI.FEASIBLE_POINT]
-                r = results[config]
-                Δdist = r[:distance] - baseline[:distance]
-                Δfeats = baseline[:num_changed] - r[:num_changed]
-                if Δfeats > 0
-                    println("  Saved $Δfeats features at cost +$(round(Δdist, digits=4)) distance")
-                end
-            end
         end
     end
 

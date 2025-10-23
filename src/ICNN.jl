@@ -22,7 +22,7 @@ export train!, predict, mse_loss
 export enforcing_convexity!, initialize_convex!
 
 # Export data loading functions
-export load_adult_income, preprocess_adult_income, split_data
+export load_adult_income, preprocess_adult_income, split_data, fit_minmax, transform!
 
 # Export utility functions
 export save_model, load_model

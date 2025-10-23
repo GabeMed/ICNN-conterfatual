@@ -3,6 +3,7 @@ using Pkg
 using Random
 using Statistics
 using Flux
+using BSON
 
 # Include the main module
 include("../src/ICNN.jl")
@@ -33,7 +34,6 @@ function main()
     # Save scaler for later use in counterfactual generation
     save_dir = joinpath(@__DIR__, "results_julia")
     mkpath(save_dir)
-    using BSON
     BSON.@save joinpath(save_dir, "scaler.bson") scaler feature_info
 
     println("\nTraining set size: $(size(X_train, 1)) samples")
@@ -49,98 +49,76 @@ function main()
         n_gradient_iterations=10   # REDUCED from 30 to 10 for speed
     )
 
-    # Validate model architecture
-    println("\n🔍 Model Architecture Validation:")
-    println("   n_features: $(model.n_features)")
-    println("   n_labels: $(model.n_labels)")
-    println("   layers: $(model.layers)")
-    println("   n_gradient_iterations: $(model.n_gradient_iterations)")
-    println("\n   Layer Dimensions:")
-    for (i, layer) in enumerate(model.input_x_layers)
-        w_shape = size(layer.weight)
-        b_shape = layer.bias === false ? "none" : size(layer.bias)
-        println("      input_x_layer[$i]: W=$(w_shape), b=$(b_shape)")
-    end
-    for (i, layer) in enumerate(model.input_y_layers)
-        w_shape = size(layer.weight)
-        b_shape = layer.bias === false ? "none" : size(layer.bias)
-        println("      input_y_layer[$i]: W=$(w_shape), b=$(b_shape)")
-    end
-    for (i, layer) in enumerate(model.hidden_layers)
-        w_shape = size(layer.weight)
-        has_bias = layer.bias !== false
-        println("      hidden_layer[$i]: W=$(w_shape), has_bias=$(has_bias)")
-    end
+    # # Validate model architecture
+    # println("\n🔍 Model Architecture Validation:")
+    # println("   n_features: $(model.n_features)")
+    # println("   n_labels: $(model.n_labels)")
+    # println("   layers: $(model.layers)")
+    # println("   n_gradient_iterations: $(model.n_gradient_iterations)")
+    # println("\n   Layer Dimensions:")
+    # for (i, layer) in enumerate(model.input_x_layers)
+    #     w_shape = size(layer.weight)
+    #     b_shape = layer.bias === false ? "none" : size(layer.bias)
+    #     println("      input_x_layer[$i]: W=$(w_shape), b=$(b_shape)")
+    # end
+    # for (i, layer) in enumerate(model.input_y_layers)
+    #     w_shape = size(layer.weight)
+    #     b_shape = layer.bias === false ? "none" : size(layer.bias)
+    #     println("      input_y_layer[$i]: W=$(w_shape), b=$(b_shape)")
+    # end
+    # for (i, layer) in enumerate(model.hidden_layers)
+    #     w_shape = size(layer.weight)
+    #     has_bias = layer.bias !== false
+    #     println("      hidden_layer[$i]: W=$(w_shape), has_bias=$(has_bias)")
+    # end
 
-    # Test forward pass before training
-    println("\n🧪 Pre-training Forward Pass Test:")
-    x_sample = X_train[1:5, :]
-    y_sample = y_train[1:5, :]
-    y_init_sample = fill(0.5f0, size(y_sample))
+    # # Test forward pass before training
+    # println("\n🧪 Pre-training Forward Pass Test:")
+    # x_sample = X_train[1:5, :]
+    # y_sample = y_train[1:5, :]
+    # y_init_sample = fill(0.5f0, size(y_sample))
 
-    println("   Testing model(x, y)...")
-    energy = model(x_sample, y_init_sample)
-    println("      ✓ Energy output: $(size(energy)) range [$(round(minimum(energy), digits=4)), $(round(maximum(energy), digits=4))]")
+    # println("   Testing model(x, y)...")
+    # energy = model(x_sample, y_init_sample)
+    # println("      ✓ Energy output: $(size(energy)) range [$(round(minimum(energy), digits=4)), $(round(maximum(energy), digits=4))]")
 
-    println("   Testing predict(model, x, y_init)...")
-    y_pred_sample = predict(model, x_sample, y_init_sample)
-    println("      ✓ Prediction output: $(size(y_pred_sample)) range [$(round(minimum(y_pred_sample), digits=4)), $(round(maximum(y_pred_sample), digits=4))]")
+    # println("   Testing predict(model, x, y_init)...")
+    # y_pred_sample = predict(model, x_sample, y_init_sample)
+    # println("      ✓ Prediction output: $(size(y_pred_sample)) range [$(round(minimum(y_pred_sample), digits=4)), $(round(maximum(y_pred_sample), digits=4))]")
 
-    println("   Testing mse_loss(model, x, y_init, y_true)...")
-    loss_sample = mse_loss(model, x_sample, y_init_sample, y_sample)
-    println("      ✓ Loss: $(round(loss_sample, digits=6))")
+    # println("   Testing mse_loss(model, x, y_init, y_true)...")
+    # loss_sample = mse_loss(model, x_sample, y_init_sample, y_sample)
+    # println("      ✓ Loss: $(round(loss_sample, digits=6))")
 
-    println("   Testing gradient computation...")
-    loss_val, grads = Flux.withgradient(model) do m
-        mse_loss(m, x_sample, y_init_sample, y_sample)
-    end
-    if grads[1] !== nothing
-        println("      ✓ Gradients computed successfully (loss=$(round(loss_val, digits=6)))")
-    else
-        println("      ✗ ERROR: Gradients are nothing!")
-    end
+    # println("   Testing gradient computation...")
+    # loss_val, grads = Flux.withgradient(model) do m
+    #     mse_loss(m, x_sample, y_init_sample, y_sample)
+    # end
+    # if grads[1] !== nothing
+    #     println("      ✓ Gradients computed successfully (loss=$(round(loss_val, digits=6)))")
+    # else
+    #     println("      ✗ ERROR: Gradients are nothing!")
+    # end
 
     # Train the model with metrics collection
     println("\nTraining model with metrics collection...")
     println("="^70)
     println("JULIA/FLUX IMPLEMENTATION")
     println("="^70)
-    
-    # DIFFERENTIATION METHOD (both are paper-compliant):
-    # - "unrolled": Unroll PGD solver, AD tracks through iterations (WORKS) ✓
-    # - "implicit": Implicit differentiation of argmin (currently uses unrolled)
-    # - "none": Standard nested AD (broken, don't use)
-    #
-    # Paper (Amos et al. ICML'17, Sec 5.1) mentions BOTH approaches:
-    # 1. "differentiate through the argmin" → implicit diff
-    # 2. "unroll the optimization procedure" → unrolled
-    #
-    # Both are valid! Use "unrolled" for now (simpler, works reliably).
-    diff_method = "unrolled"
-    
-    println("\n🎯 Differentiation method: $diff_method")
-    if diff_method == "implicit"
-        println("   Using IMPLICIT DIFFERENTIATION (Paper Sec 5.1)")
-        println("   (Currently falls back to unrolled - full impl needs param packing)")
-    elseif diff_method == "unrolled"
-        println("   Using UNROLLED SOLVER (Paper Sec 5.1 - alternative approach)")
-        println("   AD tracks through PGD iterations - paper-compliant!")
-    else
-        println("   ⚠️  Using nested AD (broken, don't use)")
-    end
+       
+    println("\n Using projected gradient descent to get the predictions")
 
     model = train!(
         model,
         X_train,
         y_train,
-        5;  # 5 epochs like Python
+        5;  
         learning_rate=0.001,
-        batch_size=128,  # INCREASED from 32 to 128 for speed
+        batch_size=64,  
         save_dir=save_dir,
         X_test=X_test,
         y_test=y_test,
         collect_metrics=true,
-        diff_method=diff_method  # Use selected differentiation method
     )
 
     # Make final predictions
