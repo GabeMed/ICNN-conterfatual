@@ -9,12 +9,9 @@ using .ICNN
 
 # Load counterfactuals module
 include("../counterfactuals/model_loader.jl")
-include("../counterfactuals/algorithms/optimization.jl")
+include("../counterfactuals/algorithms/mip_counterfactual.jl")
 
 """
-Simple example of counterfactual generation workflow.
-
-Steps:
 1. Load trained ICNN model
 2. Load/create a factual input
 3. Generate counterfactual for opposite class
@@ -151,7 +148,7 @@ function main()
     end
 
     config_order = [:light_sparsity, :medium_sparsity, :strong_sparsity]
-    config_labels = ["Light (5.0)", "Medium (20.0)", "Strong (80.0)"]
+    config_labels = ["Light (0.01)", "Medium (0.1)", "Strong (1.0)"]
 
     for (i, config) in enumerate(config_order)
         if haskey(results, config) && results[config][:status] in [MOI.OPTIMAL, MOI.FEASIBLE_POINT]
