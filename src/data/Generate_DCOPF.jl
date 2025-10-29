@@ -216,9 +216,19 @@ P_samples, Q_samples = generate_truncated_scales(data, limit_sample)
 
 results = run_dc_batch_from_data(data, P_samples, Q_samples, nsamples)
 
+println("\n" * "="^70)
+println("DCOPF Data Generation Summary")
+println("="^70)
+println("System: $system_name")
+println("Samples generated: $(results["n_valid"])")
+println("Demand dimension: $(size(results["Demand"], 2))")
+println("Objective range: [$(minimum(results["ObjDC"])), $(maximum(results["ObjDC"]))]")
+println("="^70)
 
-# Save and load model (save .json)
-# BSON.@save "test_systems/data_$system_name.bson" results
+# Save results to BSON file
+output_file = "test_systems/data_$system_name.bson"
+BSON.@save output_file results
+println("\n✅ Data saved to: $output_file")
 
 # k = BSON.load("test_systems/data_$system_name.bson")
 

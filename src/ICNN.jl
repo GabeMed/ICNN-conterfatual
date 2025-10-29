@@ -22,7 +22,7 @@ export train!, predict, mse_loss
 export enforcing_convexity!, initialize_convex!
 
 # Export data loading functions
-export load_adult_income, preprocess_adult_income, split_data, fit_minmax, transform!
+export load_dcopf_data, normalize_data, denormalize_output, prepare_dcopf_dataset, split_data
 
 # Export utility functions
 export save_model, load_model
@@ -36,7 +36,7 @@ include("models/base.jl")
 include("models/ficnn.jl")
 
 # Include data handling
-include("data/adult_income.jl")
+include("data/dcopf_loader.jl")
 
 # Include training utilities
 include("training/trainer.jl")

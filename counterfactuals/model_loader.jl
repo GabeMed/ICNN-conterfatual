@@ -33,9 +33,9 @@ function load_icnn_model(model_path::String)
     println("  Type: $(typeof(model))")
     
     if isa(model, FICNN)
-        println("  Features: $(model.n_features)")
-        println("  Labels: $(model.n_labels)")
-        println("  Architecture: $(model.layers)")
+        println("  Input features: $(model.n_features)")
+        println("  Output dimension: $(model.n_output)")
+        println("  Hidden layers: $(model.layers)")
     end
     
     return model
@@ -45,22 +45,17 @@ end
     test_model_prediction(model::FICNN, x_sample::Vector{Float32})
 
 Tests the model on a sample input to verify it works.
+For regression tasks, returns the predicted value.
 
-Returns: (predicted_class, probability)
+Returns: predicted_value (scalar Float32)
 """
 function test_model_prediction(model::FICNN, x_sample::Vector{Float32})
     # Reshape to (1, n_features)
     x_matrix = reshape(x_sample, 1, :)
-    
-    # Initialize y for optimization
-    y_init = fill(0.5f0, 1, 1)
-    
-    # Run inference
-    y_pred = predict(model, x_matrix, y_init)
-    
+
+    # Run inference (direct forward pass)
+    y_pred = predict(model, x_matrix)
+
     # Extract scalar prediction
-    prob = y_pred[1, 1]
-    predicted_class = prob > 0.5f0 ? 1 : 0
-    
-    return predicted_class, prob
+    return y_pred[1, 1]
 end
