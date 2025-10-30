@@ -6,6 +6,7 @@ using Gurobi
 using Distributions
 using BSON
 using Plots
+using Statistics
 
 function generate_truncated_scales(data::Dict, nsamples::Int)
     # Get the total number of buses in the system
@@ -116,6 +117,9 @@ function run_dc_batch_from_data(data_orig, P_samples, Q_samples, nsamples, solve
         else
             @warn "Sample $j discarded (DC infeasible)"
         end
+        
+        # Move to next sample
+        j += 1
     end
 
     # === Final check ===
@@ -199,10 +203,11 @@ function DCPM(data, Pd=nothing, Qd=nothing; solver=Gurobi.Optimizer)
     )
 end
 
-limit_sample = 200 # Number random samples 
-nsamples = 10 # Number until reach lnsamples
+limit_sample = 10000  # Number of random demand scenarios to generate
+nsamples = 5000        # Number of valid samples desired (target)
 
-path_data = "test_systems/data-opf"
+# Use path relative to this script's directory so it works from any CWD
+path_data = joinpath(@__DIR__, "data-opf")
 
 system_name = "pglib_opf_case118_ieee"
 
@@ -220,13 +225,26 @@ println("\n" * "="^70)
 println("DCOPF Data Generation Summary")
 println("="^70)
 println("System: $system_name")
-println("Samples generated: $(results["n_valid"])")
+println("Samples generated: $(results["n_valid"]) / $nsamples requested")
 println("Demand dimension: $(size(results["Demand"], 2))")
 println("Objective range: [$(minimum(results["ObjDC"])), $(maximum(results["ObjDC"]))]")
+println("Objective std: $(std(results["ObjDC"]))")
+
+# Quick quality check
+n_unique = size(unique(results["Demand"], dims=1), 1)
+println("\nQuality Check:")
+println("  Unique samples: $n_unique / $(results["n_valid"])")
+if n_unique < results["n_valid"] * 0.95
+    println("  ⚠️  Warning: Many duplicate samples detected!")
+elseif std(results["ObjDC"]) < 100
+    println("  ⚠️  Warning: Low variance in objectives!")
+else
+    println("  ✅ Data looks good!")
+end
 println("="^70)
 
 # Save results to BSON file
-output_file = "test_systems/data_$system_name.bson"
+output_file = joinpath(@__DIR__, "data_$system_name.bson")
 BSON.@save output_file results
 println("\n✅ Data saved to: $output_file")
 

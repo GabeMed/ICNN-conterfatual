@@ -1,145 +1,89 @@
-# ICNN-Counterfactual
+# Input Convex Neural Networks (ICNN) para DC-OPF
 
-Counterfactual explanation algorithms using Input Convex Neural Networks (ICNN) as blackbox predictors.
+Implementação Julia de Input Convex Neural Networks (ICNN) para aproximação de funções convexas em problemas de otimização DC-OPF (DC Optimal Power Flow) e geração de explicações contrafactuais.
 
-## Structure
+---
 
-```
-ICNN-conterfatual/
-├── src/                           # ICNN implementation (blackbox model)
-│   ├── ICNN.jl                   # Main module
-│   ├── models/                   # ICNN architectures
-│   │   ├── base.jl              # Abstract types
-│   │   └── ficnn.jl             # Fully Input Convex NN
-│   ├── training/                 # Training procedures
-│   │   ├── trainer.jl           # Train loop with convexity projection
-│   │   └── implicit_predict.jl  # Differentiable argmin (paper-compliant)
-│   ├── data/                     # Dataset loaders
-│   │   └── adult_income.jl
-│   └── utils/                    # Utilities
-│       ├── io.jl
-│       └── visualization.jl
-├── counterfactuals/              # Counterfactual generation algorithms
-│   ├── Counterfactuals.jl       # Main module
-│   └── algorithms/              # Algorithm implementations
-│       └── (to be added)
-├── examples/                     # Usage examples
-│   ├── train_icnn.jl            # Train ICNN on dataset
-│   └── results/                 # Training outputs
-├── experiments/                  # Benchmarks and experiments
-├── test/                        # Unit tests
-├── docs/                        # Documentation
-├── archive/                     # Old/reference files
-└── Project.toml                 # Dependencies
+## 📋 Visão Geral
+
+Este projeto implementa uma arquitetura **simplificada de ICNN** para **regressão**, adequada para aprender a função convexa que mapeia demandas do sistema elétrico para custos operacionais ótimos.
+
+### Principais Características
+
+- ✅ **Arquitetura feed-forward pura** (x → y direto)
+- ✅ **Garantia de convexidade** via restrições W_i ≥ 0
+- ✅ **Geração de contrafactuais via MIP** (Mixed-Integer Programming)
+- ✅ **Dataset customizado** para DC-OPF
+- ✅ **Documentação completa** em português
+
+---
+
+## 🚀 Quick Start
+
+### 1. Instalação
+
+```bash
+# Ative o ambiente Julia
+julia --project=.
+
+# Instale dependências
+using Pkg; Pkg.instantiate()
 ```
 
-## ICNN Implementation
+### 2. Gerar Dados DC-OPF
 
-The ICNN implementation follows **Amos, Xu, Kolter (ICML'17)**:
-
-### Key Features
-
-✅ **Convexity in y**: Architecture ensures f(x,y) is convex in y through:
-- Non-negative weights W^(z) ≥ 0 in hidden layers
-- ReLU activations (convex, non-decreasing)
-- Post-update projection to maintain W^(z) ≥ 0
-
-✅ **Inference via PGD**: Minimizes f(x,y) using projected gradient descent on [0,1]^p
-
-✅ **Paper-compliant training**: Uses **unrolled solver differentiation**
-- AD tracks through PGD iterations
-- Alternative to implicit differentiation mentioned in paper Sec 5.1
-- More stable than nested AD
-
-### Architecture
-
-```julia
-# Forward pass (separate x and y processing)
-z_0 = W_0^(x) * x + W_0^(y) * y + b_0
-z_i = ReLU(W_i^(x) * x + W_i^(y) * y + W_i^(z) * z_{i-1})  for i > 0
+```bash
+julia src/data/Generate_DCOPF.jl
 ```
 
-Where W^(z) ≥ 0 ensures convexity in y.
+### 3. Treinar Modelo ICNN
 
-## Quick Start
-
-### Train ICNN
-
-```julia
-using Pkg
-Pkg.activate(".")
-
-include("examples/train_icnn.jl")
+```bash
+julia examples/train_dcopf.jl
 ```
 
-This will:
-1. Load Adult Income dataset
-2. Train FICNN model (5 epochs)
-3. Save model and metrics to `examples/results/`
+### 4. Gerar Contrafactuais
 
-### Use Trained Model
-
-```julia
-include("src/ICNN.jl")
-using .ICNN
-
-# Load model
-model = load_model("examples/results/best_model.bson")
-
-# Make prediction
-x = ... # input features
-y_init = fill(0.5f0, 1, 1)
-y_pred = predict(model, x, y_init)
+```bash
+julia examples/generate_counterfactual.jl
 ```
 
-## Differentiation Methods
+---
 
-The implementation supports multiple differentiation approaches for training:
+## 📁 Estrutura do Projeto
 
-| Method | Status | Paper-Compliant | Notes |
-|--------|--------|----------------|-------|
-| `"unrolled"` | ✅ Works | ✅ Yes | Unroll PGD, AD tracks through iterations |
-| `"implicit"` | 🔄 Partial | ✅ Yes | Falls back to unrolled (needs param packing) |
-| `"none"` | ❌ Broken | ❌ No | Nested AD doesn't work with Zygote |
+```
+src/
+├── ICNN.jl                          # Módulo principal
+├── models/ficnn.jl                  # Modelo FICNN simplificado
+├── training/trainer.jl              # Funções de treinamento
+├── data/
+│   ├── Generate_DCOPF.jl           # Gerador de dados DC-OPF
+│   └── dcopf_loader.jl             # Carregador de dados
+└── utils/io.jl                      # Save/load modelos
 
-**Recommended**: Use `diff_method="unrolled"` (default in examples).
+counterfactuals/
+├── model_loader.jl                  # Carregador de modelos treinados
+└── algorithms/mip_counterfactual.jl # MIP para contrafactuais
 
-## Paper Reference
-
-```bibtex
-@inproceedings{amos2017input,
-  title={Input convex neural networks},
-  author={Amos, Brandon and Xu, Lei and Kolter, J Zico},
-  booktitle={International Conference on Machine Learning},
-  pages={146--155},
-  year={2017},
-  organization={PMLR}
-}
+examples/
+├── train_dcopf.jl                  # Treinar ICNN
+├── generate_counterfactual.jl      # Gerar contrafactuais
+└── test_architecture.jl            # Testes da arquitetura
 ```
 
-## Dependencies
+---
 
-```toml
-[deps]
-BSON = "fbb218c0-5317-5bc6-957e-2ee96dd4b1f0"
-CSV = "336ed68f-0bac-5ca0-87d4-7b16caf5d00b"
-ChainRulesCore = "d360d2e6-b24c-11e9-a2a3-2a2ae2dbcce4"
-DataFrames = "a93c6f00-e57d-5684-b7b6-d8193f3e46c0"
-Flux = "587475ba-b1d2-4670-a9a8-e4f34e0d6d79"
-ImplicitDifferentiation = "57b37032-215b-411f-ba27-7a5596611d64"
-JSON = "682c06a0-de6a-54ab-a142-c8b1cf79cde6"
-Plots = "91a5bcdd-55d7-5caf-9e0b-520d859cae80"
-Zygote = "e88e6eb3-aa80-5325-afca-941959d7151f"
-```
+## 📚 Documentação
 
-## Next Steps
+- **[ARCHITECTURE_CHANGES.md](ARCHITECTURE_CHANGES.md)** - Mudanças de arquitetura
+- **[COUNTERFACTUALS_GUIDE.md](COUNTERFACTUALS_GUIDE.md)** - Guia de contrafactuais
+- **[COUNTERFACTUALS_SUMMARY.md](COUNTERFACTUALS_SUMMARY.md)** - Resumo rápido
 
-- [ ] Implement counterfactual generation algorithms
-- [ ] Add benchmarks comparing different methods
-- [ ] Create experiments on various datasets
-- [ ] Add comprehensive tests
+---
 
-## License
+**Status:** ✅ Implementação completa
 
-[Add license information]
+**Autores:** Gabriel Medeiros & Claude
 
+**Data:** 2025-10-29
