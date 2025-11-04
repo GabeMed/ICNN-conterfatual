@@ -15,7 +15,7 @@ using Pkg
 Pkg.activate(".")
 
 # Load ICNN module
-include("../src/ICNN.jl")
+include("../icnn/ICNN.jl")
 using .ICNN
 
 # Load counterfactuals module
@@ -40,7 +40,7 @@ function main()
 
     # Paths (adjust these to your trained model)
     model_path = "tmp/dcopf_experiment/best_model.bson"
-    data_path = "test_systems/data_pglib_opf_case118_ieee.bson"
+    data_path = "icnn/data/data_pglib_opf_case118_ieee.bson"
 
     # Counterfactual settings
     sparsity_weight = 0.1     # Weight for sparsity penalty
@@ -71,7 +71,7 @@ function main()
         Model file not found: $model_path
 
         Please train a model first:
-            julia examples/train_dcopf.jl
+            julia src/train_dcopf.jl
 
         This will create the model file.
         """)
