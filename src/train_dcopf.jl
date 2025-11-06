@@ -31,8 +31,8 @@ println("=" ^ 70)
 data_file = "icnn/data/data_pglib_opf_case118_ieee.bson"
 
 # Model hyperparameters
-hidden_sizes = [200, 200]  # Two hidden layers with 200 units each
-learning_rate = 0.001f0
+hidden_sizes = [100, 50]  # Reduced from [200, 200] - smaller network to reduce neuron death
+learning_rate = 1f-3  # Restored to 1e-3 (combined with larger MIN_WEIGHT)
 batch_size = 32
 epochs = 50
 

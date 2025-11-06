@@ -1,0 +1,19 @@
+ICNN MODEL ASSESSMENT RESULTS
+Timestamp: 2025-11-06T01:38:25.275
+Decision: NO-GO
+
+CRITERIA:
+  Active neurons: 8.51% (threshold: 50%) - FAIL
+  R²: 0.5496 (threshold: 0.5) - PASS
+  Convexity: 36492 violations - FAIL
+
+METRICS:
+  Best epoch: 50
+  Test loss: 0.45036995
+  Test RMSE: 0.6710961
+  Test MAE: 0.40754992
+
+COMPARISON:
+  Previous dead neurons: 92.0%
+  Current dead neurons: 91.14%
+  Improvement: 0.86%

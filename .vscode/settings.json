@@ -1,0 +1,13 @@
+{
+  "code-runner.executorMap": {
+    "julia": "julia"
+  },
+  "code-runner.runInTerminal": true,
+  "code-runner.clearPreviousOutput": true,
+  "code-runner.saveFileBeforeRun": true,
+  "code-runner.preserveFocus": false,
+  "code-runner.fileDirectoryAsCwd": true,
+  "code-runner.executorMapByFileExtension": {
+    ".jl": "julia"
+  }
+}
