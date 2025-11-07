@@ -75,7 +75,8 @@ Train ICNN with mini-batch gradient descent for regression.
 """
 function train!(model::AbstractICNN, data_x, data_y, epochs::Int = 100;
                 learning_rate=0.001f0, batch_size=32, save_dir = "./tmp",
-                is_convex=true, X_test=nothing, y_test=nothing, collect_metrics=false)
+                is_convex=true, X_test=nothing, y_test=nothing, collect_metrics=false,
+                scaler_X=nothing, scaler_Y=nothing)
     # Create save directory and log file
     mkpath(save_dir)
     log_file = joinpath(save_dir, "training_log.csv")
@@ -227,17 +228,17 @@ function train!(model::AbstractICNN, data_x, data_y, epochs::Int = 100;
         if epoch_loss < best_mse
             best_mse = epoch_loss
             best_model_path = joinpath(save_dir, "best_model.bson")
-            save_model(model, best_model_path)
+            save_model(model, best_model_path; scaler_X=scaler_X, scaler_Y=scaler_Y)
         end
 
         if epoch % 10 == 0
             checkpoint_path = joinpath(save_dir, "checkpoint_epoch_$epoch.bson")
-            save_model(model, checkpoint_path)
+            save_model(model, checkpoint_path; scaler_X=scaler_X, scaler_Y=scaler_Y)
         end
     end
 
     final_model_path = joinpath(save_dir, "final_model.bson")
-    save_model(model, final_model_path)
+    save_model(model, final_model_path; scaler_X=scaler_X, scaler_Y=scaler_Y)
     
     if collect_metrics
         # Collect input layer weights

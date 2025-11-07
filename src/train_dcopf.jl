@@ -31,13 +31,13 @@ println("=" ^ 70)
 data_file = "icnn/data/data_pglib_opf_case118_ieee.bson"
 
 # Model hyperparameters
-hidden_sizes = [100, 50]  # Reduced from [200, 200] - smaller network to reduce neuron death
+hidden_sizes = [500, 500]  # Reduced from [200, 200] - smaller network to reduce neuron death
 learning_rate = 1f-3  # Restored to 1e-3 (combined with larger MIN_WEIGHT)
 batch_size = 32
 epochs = 50
 
 # Data preprocessing
-normalize_method = :standardize  # Options: :standardize, :minmax, :none
+normalize_method = :none  # Options: :standardize, :minmax, :none
 train_ratio = 0.8
 
 # Training options
@@ -137,7 +137,9 @@ model = train!(
     is_convex=is_convex,
     X_test=X_test,
     y_test=Y_test,
-    collect_metrics=collect_metrics
+    collect_metrics=collect_metrics,
+    scaler_X=dataset.scaler_X,
+    scaler_Y=dataset.scaler_Y
 )
 
 println("\n✅ Training completed!")

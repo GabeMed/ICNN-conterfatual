@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>ICNN Training Report</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        h1 {
+            color: #2c3e50;
+            border-bottom: 3px solid #3498db;
+            padding-bottom: 10px;
+        }
+        h2 {
+            color: #34495e;
+            margin-top: 30px;
+            border-bottom: 2px solid #95a5a6;
+            padding-bottom: 5px;
+        }
+        .metric-box {
+            background-color: white;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 10px 0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .metric-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        .metric-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .metric-card.success {
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+        }
+        .metric-card.warning {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+        .metric-label {
+            font-size: 14px;
+            opacity: 0.9;
+            margin-bottom: 5px;
+        }
+        .metric-value {
+            font-size: 32px;
+            font-weight: bold;
+        }
+        img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            margin: 20px 0;
+        }
+        .info-box {
+            background-color: #e3f2fd;
+            border-left: 4px solid #2196f3;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+        .success-box {
+            background-color: #e8f5e9;
+            border-left: 4px solid #4caf50;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+        .warning-box {
+            background-color: #fff3e0;
+            border-left: 4px solid #ff9800;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background-color: white;
+            margin: 20px 0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        th {
+            background-color: #3498db;
+            color: white;
+        }
+        tr:hover {
+            background-color: #f5f5f5;
+        }
+        .footer {
+            margin-top: 50px;
+            padding-top: 20px;
+            border-top: 2px solid #ddd;
+            text-align: center;
+            color: #7f8c8d;
+        }
+    </style>
+</head>
+<body>
+    <h1>🧠 ICNN Training Report</h1>
+    
+    <div class="info-box">
+        <strong>Experiment:</strong> DCOPF Case 118 IEEE<br>
+        <strong>Date:</strong> 2025-11-07 16:49<br>
+        <strong>Normalization:</strong> none<br>
+        <strong>Dataset:</strong> 4000 train, 1000 test samples
+    </div>
+
+    <h2>📊 Performance Metrics</h2>
+    
+    <div class="metric-row">
+        <div class="metric-card success">
+            <div class="metric-label">Test R² Score</div>
+            <div class="metric-value">98.7%</div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-label">Test RMSE</div>
+            <div class="metric-value">303.5789</div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-label">Test MAE</div>
+            <div class="metric-value">227.5448</div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-label">Epochs Trained</div>
+            <div class="metric-value">50</div>
+        </div>
+    </div>
+
+    <div class="metric-box">
+        <h3>Detailed Performance</h3>
+        <table>
+            <tr>
+                <th>Dataset</th>
+                <th>MSE</th>
+                <th>RMSE</th>
+                <th>MAE</th>
+                <th>R²</th>
+            </tr>
+            <tr>
+                <td><strong>Train</strong></td>
+                <td>79523.05</td>
+                <td>281.99832</td>
+                <td>217.58525</td>
+                <td>0.9886</td>
+            </tr>
+            <tr>
+                <td><strong>Test</strong></td>
+                <td>92160.16</td>
+                <td>303.57892</td>
+                <td>227.54482</td>
+                <td>0.9872</td>
+            </tr>
+        </table>
+    </div>
+
+    <h2>📈 Training Progress</h2>
+    <img src="1_loss_curves.png" alt="Loss Curves">
+    <img src="2_loss_vs_time.png" alt="Loss vs Time">
+
+    <h2>🎯 Prediction Quality</h2>
+    <img src="3_predictions_scatter.png" alt="Predictions Scatter">
+    <img src="4_error_distribution.png" alt="Error Distribution">
+
+    <h2>🔧 Convexity Analysis</h2>
+    
+    <div class="success-box">
+        <strong>✓ Convexity Check:</strong> PASSED - All weights non-negative
+    </div>
+
+    <img src="5_weight_distribution.png" alt="Weight Distribution">
+
+    <div class="metric-box">
+        <h3>Layer-wise Weight Statistics</h3>
+        <table>
+            <tr>
+                <th>Layer</th>
+                <th># Weights</th>
+                <th># Negative</th>
+                <th>Min</th>
+                <th>Max</th>
+                <th>Mean</th>
+            </tr>
+            <tr>
+                <td>Hidden Layer 1</td>
+                <td>250000</td>
+                <td>0</td>
+                <td>0.084886</td>
+                <td>1.167641</td>
+                <td>0.577023</td>
+            </tr>
+            <tr>
+                <td>Hidden Layer 2</td>
+                <td>500</td>
+                <td>0</td>
+                <td>0.141181</td>
+                <td>1.038568</td>
+                <td>0.57844</td>
+            </tr>
+        </table>
+    </div>
+
+    <h2>📝 Model Configuration</h2>
+    
+    <div class="metric-box">
+        <table>
+            <tr>
+                <td><strong>Input Features</strong></td>
+                <td>236</td>
+            </tr>
+            <tr>
+                <td><strong>Output Dimension</strong></td>
+                <td>1</td>
+            </tr>
+            <tr>
+                <td><strong>Hidden Layers</strong></td>
+                <td>[500, 500, 1]</td>
+            </tr>
+            <tr>
+                <td><strong>Total Parameters</strong></td>
+                <td>369002</td>
+            </tr>
+            <tr>
+                <td><strong>Normalization Method</strong></td>
+                <td>none</td>
+            </tr>
+            <tr>
+                <td><strong>Target Range (original)</strong></td>
+                <td>[Not normalized - values in original scale]</td>
+            </tr>
+        </table>
+    </div>
+
+    <h2>✅ Summary</h2>
+    
+    <div class="success-box"><strong>EXCELLENT</strong> - Model achieves R² > 95% on test set. High-quality predictions.</div>
+
+    <div class="success-box"><strong>✓ CONVEXITY VERIFIED</strong> - All hidden layer weights are non-negative. ICNN convexity property satisfied.</div>
+
+    <div class="footer">
+        <p>Generated by ICNN Training Visualization Tool</p>
+        <p>2025-11-07 16:49:10</p>
+    </div>
+</body>
+</html>

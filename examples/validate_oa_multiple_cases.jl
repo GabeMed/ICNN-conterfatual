@@ -30,10 +30,10 @@ println()
 println("Loading trained model and dataset...")
 
 model_path = "/home/gabemed/purdue/ICNN-conterfatual/tmp/dcopf_experiment/best_model.bson"
-model = load_model(model_path)
+model, scaler_X_model, scaler_Y_model = load_model(model_path)
 
 data_path = "/home/gabemed/purdue/ICNN-conterfatual/icnn/data/data_pglib_opf_case118_ieee.bson"
-dataset = prepare_dcopf_dataset(data_path; train_ratio=0.8, normalize_method=:standardize, seed=42)
+dataset = prepare_dcopf_dataset(data_path; train_ratio=0.8, normalize_method=:none, seed=42)
 
 X_train = dataset.X_train
 Y_train = dataset.Y_train
@@ -63,6 +63,18 @@ println("  Total tests: $(n_test_cases * length(perturbation_configs))")
 println()
 
 # ============================================================================
+# Pre-filter: Find high-cost points (> 75th percentile)
+# ============================================================================
+println("Pre-filtering high-cost points...")
+costs_train = [model(reshape(Float32.(X_train[i, :]), 1, :))[1, 1] for i in 1:min(1000, n_train)]
+cost_threshold = quantile(costs_train, 0.75)
+high_cost_indices = findall(i -> model(reshape(Float32.(X_train[i, :]), 1, :))[1, 1] > cost_threshold, 1:min(1000, n_train))
+
+println("  Cost threshold (75th percentile): $(round(cost_threshold, digits=4))")
+println("  High-cost points found: $(length(high_cost_indices))")
+println()
+
+# ============================================================================
 # Run Validation Tests
 # ============================================================================
 results_summary = []
@@ -79,8 +91,12 @@ for (config_idx, config) in enumerate(perturbation_configs)
         println("Test Case $(test_idx)/$(n_test_cases)")
         println("-" ^ 80)
 
-        # Select random training point
-        point1_idx = rand(1:n_train)
+        # Select from high-cost points only
+        if length(high_cost_indices) > 0
+            point1_idx = high_cost_indices[rand(1:length(high_cost_indices))]
+        else
+            point1_idx = rand(1:n_train)
+        end
         point1 = Float32.(X_train[point1_idx, :])
         cost1 = model(reshape(point1, 1, :))[1, 1]
 

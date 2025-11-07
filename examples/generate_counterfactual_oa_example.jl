@@ -114,7 +114,7 @@ end
 dataset = prepare_dcopf_dataset(
     data_file;
     train_ratio=0.8,
-    normalize_method=:standardize,
+    normalize_method=:none,
     shuffle=true,
     seed=42
 )

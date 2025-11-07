@@ -1,0 +1,2 @@
+iteration,feature_1,feature_2,cost,target_error,feasible,lower_bound,upper_bound,gap
+1,0.7665929,-0.38828576,94878.578125,0.0,true,0.480035798864567,0.480035798864567,0.0

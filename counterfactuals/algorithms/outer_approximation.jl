@@ -543,8 +543,10 @@ function generate_counterfactual_oa(
         # Extract gamma_k (for logging)
 
         # Step 4: Check feasibility w.r.t. target
+        # Add small numerical tolerance to avoid floating-point issues
+        numerical_tol = 1e-6
         target_error = max(0.0, f_k - (y_target + epsilon))  # Violation amount
-        feasible = f_k <= y_target + epsilon
+        feasible = f_k <= y_target + epsilon + numerical_tol
 
         # Step 5: Update upper bound if feasible
         if feasible && obj_k < UB

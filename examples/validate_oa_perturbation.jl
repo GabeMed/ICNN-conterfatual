@@ -25,6 +25,8 @@ using Printf
 using Plots
 using Random
 using Statistics
+using CSV
+using DataFrames
 
 # ============================================================================
 # Visualization Function (defined early to be available)
@@ -142,12 +144,12 @@ if !isfile(model_path)
     error("Model not found at $model_path. Please train a model first.")
 end
 
-model = load_model(model_path)
+model, scaler_X, scaler_Y = load_model(model_path)
 println("✓ Model loaded from: $model_path")
 
 # Load DCOPF dataset
 data_path = "/home/gabemed/purdue/ICNN-conterfatual/icnn/data/data_pglib_opf_case118_ieee.bson"
-dataset = prepare_dcopf_dataset(data_path; train_ratio=0.8, normalize_method=:standardize, seed=42)
+dataset = prepare_dcopf_dataset(data_path; train_ratio=0.8, normalize_method=:none, seed=42)
 
 X_train = dataset.X_train
 Y_train = dataset.Y_train
@@ -195,7 +197,7 @@ point2 = copy(point1)
 # For standardized data, typical range is ~[-3, 3]
 # We'll perturb by a moderate amount (e.g., 0.5-1.0 standard deviations)
 perturbation1 = 0.8f0
-perturbation2 = -0.6f0
+perturbation2 = 0.6f0
 
 point2[1] += perturbation1
 point2[2] += perturbation2
@@ -214,6 +216,9 @@ println()
 # ============================================================================
 println("STEP 4: Setting up counterfactual problem...")
 println("-" ^ 80)
+
+# Compute cost change from perturbation
+cost_change = cost2 - cost1
 
 # Target: Recover cost1 (or better)
 # We'll set target slightly below cost1 to encourage finding Point1 or better
@@ -267,6 +272,7 @@ result = generate_counterfactual_oa(
 )
 
 println()
+
 
 # ============================================================================
 # STEP 6: Analyze Results and Validate Recovery
