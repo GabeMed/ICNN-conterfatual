@@ -194,29 +194,16 @@ println("Model prediction range (test set): [\$$(round(y_test_min, digits=2)), \
 println("Current cost: \$$(round(y_factual, digits=2))")
 println()
 
-# Try to reduce cost by 5% initially (more conservative)
-reduction_percentage = 0.05
+# Percentage reduction of the cost
+reduction_percentage = 0.30
 y_target_denorm = y_factual * (1 - reduction_percentage)
 
-# Check if target is within reasonable range
-if y_target_denorm < y_test_min
-    println("⚠ Warning: $(Int(reduction_percentage * 100))% reduction would be below model's typical range")
-    # Adjust to be at 10th percentile of test set
-    y_target_denorm = quantile(Y_pred_denorm[:, 1], 0.1)
-    reduction_percentage = (y_factual - y_target_denorm) / y_factual
-    println("  Adjusting target to 10th percentile: \$$(round(y_target_denorm, digits=2))")
-    println("  New reduction: $(round(reduction_percentage * 100, digits=1))%")
-    println()
-end
-
 # Convert target to normalized space (what the model works with)
-y_target_norm = (y_target_denorm .- scaler_Y[:mean]) ./ scaler_Y[:std]
-y_target = Float64(y_target_norm[1])
+# Handle different normalization methods
+y_target = Float64(y_target_denorm)
 
-# Epsilon: 2% of absolute target value for more flexibility
-epsilon = 0.02 * abs(y_target)
-# Ensure minimum epsilon for numerical stability
-epsilon = max(epsilon, 0.01)
+# Epsilon is the tolerance for the target constraint
+epsilon = 0.002 * abs(y_target)
 
 println("Counterfactual goal: Reduce operational cost by $(round(reduction_percentage * 100, digits=1))%")
 println()
@@ -248,7 +235,7 @@ sparsity_weight = 0.05
 x_min = minimum(X_test)
 x_max = maximum(X_test)
 # Add some margin for exploration
-x_bounds = (Float64(x_min - 0.5), Float64(x_max + 0.5))
+x_bounds = (Float64(x_min), Float64(x_max + 0.5))
 
 println("Input feature range (from test data):")
 println("  Min: $(round(x_min, digits=4))")
@@ -324,8 +311,7 @@ if result[:status] == :infeasible
 
     # Try increasing instead - this means finding configurations with cost UP TO the new target
     y_target_denorm_alt = y_factual * (1 + reduction_percentage)
-    y_target_norm_alt = (y_target_denorm_alt .- scaler_Y[:mean]) ./ scaler_Y[:std]
-    y_target_alt = Float64(y_target_norm_alt[1])
+    y_target_alt = Float64(y_target_denorm_alt)
     epsilon_alt = 0.02 * abs(y_target_alt)
     epsilon_alt = max(epsilon_alt, 0.01)
 
@@ -384,9 +370,7 @@ if result[:status] == :optimal
     println("Status:                    $(result[:status])")
     println("Iterations:                $(result[:iterations])")
     println("Solve time:                $(round(result[:solve_time], digits=2))s")
-    println("Lower bound (final):       $(round(result[:lower_bound], digits=4))")
-    println("Upper bound (final):       $(round(result[:upper_bound], digits=4))")
-    println("Optimality gap:            $(round(result[:upper_bound] - result[:lower_bound], digits=6))")
+    println("Best objective:            $(round(result[:upper_bound], digits=4))")
     println()
 
     println("=" ^ 80)
@@ -534,7 +518,7 @@ if result[:status] == :optimal
     println("  Total iterations:         $(result[:iterations])")
     println("  Total solve time:         $(round(result[:solve_time], digits=2))s")
     println("  Avg time per iteration:   $(round(result[:solve_time] / result[:iterations], digits=2))s")
-    println("  Final gap:                $(round(result[:upper_bound] - result[:lower_bound], digits=6))")
+    println("  Best objective:           $(round(result[:upper_bound], digits=6))")
     println()
 
     if haskey(result, :iteration_history)
@@ -548,46 +532,44 @@ if result[:status] == :optimal
         println("  Feasible iterations:      $n_feasible / $(length(history))")
         println("  First feasible at:        $(first_feasible !== nothing ? "iter $first_feasible" : "none")")
 
-        # Gap progression
-        if length(history) >= 2
-            initial_gap = history[1].UB - history[1].LB
-            final_gap = history[end].UB - history[end].LB
-            gap_reduction = (1 - final_gap / initial_gap) * 100
-
-            if isfinite(initial_gap) && isfinite(final_gap)
-                println("  Initial gap:              $(round(initial_gap, digits=4))")
-                println("  Final gap:                $(round(final_gap, digits=6))")
-                println("  Gap reduction:            $(round(gap_reduction, digits=1))%")
+        # Bound progression
+        if length(history) >= 2 && history[end].UB < Inf
+            initial_ub = history[1].UB
+            final_ub = history[end].UB
+            
+            if isfinite(initial_ub) && isfinite(final_ub)
+                println("  Best objective (initial): $(round(initial_ub, digits=4))")
+                println("  Best objective (final):   $(round(final_ub, digits=6))")
             end
         end
 
         println()
         println("Iteration history (first 5 and last 5):")
         println()
-        println("  Iter |    LB    |    UB    |  f(x)   | Target err | Feasible")
-        println("  -----|----------|----------|---------|------------|----------")
+        println("  Iter | Master obj |    UB    |  f(x)   | Target err | Feasible")
+        println("  -----|------------|----------|---------|------------|----------")
 
         # Show first 5
         for iter in history[1:min(5, length(history))]
             feas = iter.feasible ? "✓" : "✗"
-            @printf("   %2d  | %8.4f | %8.4f | %7.4f | %10.6f |    %s\n",
-                   iter.iteration, iter.LB, iter.UB, iter.f_k, iter.target_error, feas)
+            @printf("   %2d  | %10.4f | %8.4f | %7.4f | %10.6f |    %s\n",
+                   iter.iteration, iter.obj_k, iter.UB, iter.f_k, iter.target_error, feas)
         end
 
         # Show last 5 if more than 10 iterations
         if length(history) > 10
-            println("  ...  |    ...   |    ...   |   ...   |    ...     |   ...")
+            println("  ...  |    ...     |    ...   |   ...   |    ...     |   ...")
             for iter in history[end-4:end]
                 feas = iter.feasible ? "✓" : "✗"
-                @printf("   %2d  | %8.4f | %8.4f | %7.4f | %10.6f |    %s\n",
-                       iter.iteration, iter.LB, iter.UB, iter.f_k, iter.target_error, feas)
+                @printf("   %2d  | %10.4f | %8.4f | %7.4f | %10.6f |    %s\n",
+                       iter.iteration, iter.obj_k, iter.UB, iter.f_k, iter.target_error, feas)
             end
         elseif length(history) > 5
             # Show remaining if between 5 and 10
             for iter in history[6:end]
                 feas = iter.feasible ? "✓" : "✗"
-                @printf("   %2d  | %8.4f | %8.4f | %7.4f | %10.6f |    %s\n",
-                       iter.iteration, iter.LB, iter.UB, iter.f_k, iter.target_error, feas)
+                @printf("   %2d  | %10.4f | %8.4f | %7.4f | %10.6f |    %s\n",
+                       iter.iteration, iter.obj_k, iter.UB, iter.f_k, iter.target_error, feas)
             end
         end
     end
@@ -632,8 +614,8 @@ else
         println("Last 5 iterations:")
         history = result[:iteration_history]
         for iter in history[max(1, end-4):end]
-            @printf("  Iter %2d: LB=%.4f UB=%.4f f(x)=%.4f err=%.4f\n",
-                   iter.iteration, iter.LB, iter.UB, iter.f_k, iter.target_error)
+            @printf("  Iter %2d: obj=%.4f UB=%.4f f(x)=%.4f err=%.4f\n",
+                   iter.iteration, iter.obj_k, iter.UB, iter.f_k, iter.target_error)
         end
     end
 end

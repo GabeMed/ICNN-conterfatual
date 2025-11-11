@@ -197,7 +197,7 @@ point2 = copy(point1)
 # For standardized data, typical range is ~[-3, 3]
 # We'll perturb by a moderate amount (e.g., 0.5-1.0 standard deviations)
 perturbation1 = 0.8f0
-perturbation2 = 0.6f0
+perturbation2 = 0.0f0
 
 point2[1] += perturbation1
 point2[2] += perturbation2
@@ -392,7 +392,7 @@ if result[:status] == :optimal || result[:status] == :already_at_target
     println("Optimization Statistics:")
     println("  Iterations: $(result[:iterations])")
     println("  Solve time: $(round(result[:solve_time], digits=2))s")
-    println("  Final gap: $(round(result[:upper_bound] - result[:lower_bound], digits=6))")
+    println("  Best objective: $(round(result[:upper_bound], digits=6))")
     println("  Features changed: $(result[:num_changed]) (expected: 2)")
 
     # ========================================================================
@@ -435,8 +435,8 @@ else
         n_show = min(10, length(history))
         for i in (length(history)-n_show+1):length(history)
             h = history[i]
-            @printf("  Iter %2d: LB=%8.4f  UB=%8.4f  f(x)=%7.4f  err=%6.4f  %s\n",
-                   h.iteration, h.LB, h.UB, h.f_k, h.target_error,
+            @printf("  Iter %2d: obj=%8.4f  UB=%8.4f  f(x)=%7.4f  err=%6.4f  %s\n",
+                   h.iteration, h.obj_k, h.UB, h.f_k, h.target_error,
                    h.feasible ? "✓" : "✗")
         end
     end
