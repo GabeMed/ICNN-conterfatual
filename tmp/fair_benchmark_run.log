@@ -1,0 +1,515 @@
+[32m[1m  Activating[22m[39m project at `~/purdue/ICNN-conterfatual`
+[33m[1m┌ [22m[39m[33m[1mWarning: [22m[39mReplacing docs for `Main.ICNN.enforcing_convexity! :: Tuple{Main.ICNN.AbstractICNN}` in module `Main.ICNN`
+[33m[1m└ [22m[39m[90m@ Base.Docs docs/Docs.jl:249[39m
+[33m[1m┌ [22m[39m[33m[1mWarning: [22m[39mReplacing docs for `Main.ICNN.initialize_convex! :: Tuple{Main.ICNN.AbstractICNN}` in module `Main.ICNN`
+[33m[1m└ [22m[39m[90m@ Base.Docs docs/Docs.jl:249[39m
+[33m[1m┌ [22m[39m[33m[1mWarning: [22m[39mReplacing docs for `Main.ICNN.predict :: Tuple{Main.ICNN.AbstractICNN, Any}` in module `Main.ICNN`
+[33m[1m└ [22m[39m[90m@ Base.Docs docs/Docs.jl:249[39m
+[33m[1m┌ [22m[39m[33m[1mWarning: [22m[39mReplacing docs for `Main.ICNN.mse_loss :: Tuple{Main.ICNN.AbstractICNN, Any, Any}` in module `Main.ICNN`
+[33m[1m└ [22m[39m[90m@ Base.Docs docs/Docs.jl:249[39m
+[33m[1m┌ [22m[39m[33m[1mWarning: [22m[39mReplacing docs for `Main.ICNN.train! :: Union{Tuple{Main.ICNN.AbstractICNN, Any, Any}, Tuple{Main.ICNN.AbstractICNN, Any, Any, Int64}}` in module `Main.ICNN`
+[33m[1m└ [22m[39m[90m@ Base.Docs docs/Docs.jl:249[39m
+================================================================================
+Fair Benchmark Comparison: ECP vs ESH vs MILP
+================================================================================
+
+Benchmark Configuration:
+  Trials per method per case: 3
+  Test cases: 5
+  Random seed: 42
+  MILP time limit: 600.0s
+
+Loading resources...
+[36m[1m[ [22m[39m[36m[1mInfo: [22m[39mLoaded DCOPF data from /home/gabemed/purdue/ICNN-conterfatual/examples/../icnn/data/data_pglib_opf_case118_ieee.bson
+[36m[1m[ [22m[39m[36m[1mInfo: [22m[39m  Samples: 5000
+[36m[1m[ [22m[39m[36m[1mInfo: [22m[39m  Features: 236
+[36m[1m[ [22m[39m[36m[1mInfo: [22m[39m  Objective range: [82576.81053217081, 102461.54490145156]
+[36m[1m[ [22m[39m[36m[1mInfo: [22m[39mDataset prepared:
+[36m[1m[ [22m[39m[36m[1mInfo: [22m[39m  Training samples: 4000
+[36m[1m[ [22m[39m[36m[1mInfo: [22m[39m  Test samples: 1000
+[36m[1m[ [22m[39m[36m[1mInfo: [22m[39m  Features: 236
+[36m[1m[ [22m[39m[36m[1mInfo: [22m[39m  Normalization: none
+✓ Resources loaded
+✓ Selected 3 test cases
+
+Warmup (compiling Julia code, excluded from results)...
+Set parameter Username
+Set parameter LicenseID to value 2707036
+Academic license - for non-commercial use only - expires 2026-09-10
+Set parameter Username
+Set parameter LicenseID to value 2707036
+Academic license - for non-commercial use only - expires 2026-09-10
+Set parameter Username
+Set parameter LicenseID to value 2707036
+Academic license - for non-commercial use only - expires 2026-09-10
+✓ Warmup complete
+
+================================================================================
+Test Case 1/3 (Sample #3)
+================================================================================
+  y_factual = 99674.72
+  y_target = 59804.83
+  Reduction: 40.0%
+
+Running 9 trials in randomized order...
+Set parameter Username
+Set parameter LicenseID to value 2707036
+Academic license - for non-commercial use only - expires 2026-09-10
+Set parameter Username
+Set parameter LicenseID to value 2707036
+Academic license - for non-commercial use only - expires 2026-09-10
+  ESH trial 1: 4.441s ✓  Set parameter Username
+Set parameter LicenseID to value 2707036
+Academic license - for non-commercial use only - expires 2026-09-10
+  ECP trial 2: 2.897s ✓  Factual: y = 99674.72
+Target: y = 59804.8312 ± 119.6096625
+Parameters: sparsity=0.05, time_limit=600.0s
+Set parameter Username
+Set parameter LicenseID to value 2707036
+Academic license - for non-commercial use only - expires 2026-09-10
+Solving MIP...
+✓ Found counterfactual!
+  Distance: 15.3863
+  Changed features: 13/236
+  Predicted value: 59924.4409
+  Target error: 119.609662
+  Solve time: 1.13s
+
+  Changed features (showing up to 20):
+    Feature  15: 1.1524 → 0.0000 (Δ = -1.1524)
+    Feature  18: 0.6312 → 0.0000 (Δ = -0.6312)
+    Feature  42: 0.9119 → 0.0000 (Δ = -0.9119)
+    Feature  49: 0.7505 → 0.0000 (Δ = -0.7505)
+    Feature  54: 1.1433 → 0.0000 (Δ = -1.1433)
+    Feature  55: 0.6813 → 0.0000 (Δ = -0.6813)
+    Feature  56: 0.8508 → 0.0000 (Δ = -0.8508)
+    Feature  59: 3.1551 → 0.0000 (Δ = -3.1551)
+    Feature  60: 0.8790 → 0.0000 (Δ = -0.8790)
+    Feature  62: 0.8316 → 0.0000 (Δ = -0.8316)
+    Feature  80: 1.6238 → 0.1975 (Δ = -1.4263)
+    Feature 112: 0.7118 → 0.0000 (Δ = -0.7118)
+    Feature 116: 2.2612 → 0.0000 (Δ = -2.2612)
+  MILP trial 2: 1.132s ✓  Factual: y = 99674.72
+Target: y = 59804.8312 ± 119.6096625
+Parameters: sparsity=0.05, time_limit=600.0s
+Set parameter Username
+Set parameter LicenseID to value 2707036
+Academic license - for non-commercial use only - expires 2026-09-10
+Solving MIP...
+✓ Found counterfactual!
+  Distance: 15.3863
+  Changed features: 13/236
+  Predicted value: 59924.4409
+  Target error: 119.609662
+  Solve time: 1.13s
+
+  Changed features (showing up to 20):
+    Feature  15: 1.1524 → 0.0000 (Δ = -1.1524)
+    Feature  18: 0.6312 → 0.0000 (Δ = -0.6312)
+    Feature  42: 0.9119 → 0.0000 (Δ = -0.9119)
+    Feature  49: 0.7505 → 0.0000 (Δ = -0.7505)
+    Feature  54: 1.1433 → 0.0000 (Δ = -1.1433)
+    Feature  55: 0.6813 → 0.0000 (Δ = -0.6813)
+    Feature  56: 0.8508 → 0.0000 (Δ = -0.8508)
+    Feature  59: 3.1551 → 0.0000 (Δ = -3.1551)
+    Feature  60: 0.8790 → 0.0000 (Δ = -0.8790)
+    Feature  62: 0.8316 → 0.0000 (Δ = -0.8316)
+    Feature  80: 1.6238 → 0.1975 (Δ = -1.4263)
+    Feature 112: 0.7118 → 0.0000 (Δ = -0.7118)
+    Feature 116: 2.2612 → 0.0000 (Δ = -2.2612)
+  MILP trial 1: 1.131s ✓  Factual: y = 99674.72
+Target: y = 59804.8312 ± 119.6096625
+Parameters: sparsity=0.05, time_limit=600.0s
+Set parameter Username
+Set parameter LicenseID to value 2707036
+Academic license - for non-commercial use only - expires 2026-09-10
+Solving MIP...
+✓ Found counterfactual!
+  Distance: 15.3863
+  Changed features: 13/236
+  Predicted value: 59924.4409
+  Target error: 119.609662
+  Solve time: 1.14s
+
+  Changed features (showing up to 20):
+    Feature  15: 1.1524 → 0.0000 (Δ = -1.1524)
+    Feature  18: 0.6312 → 0.0000 (Δ = -0.6312)
+    Feature  42: 0.9119 → 0.0000 (Δ = -0.9119)
+    Feature  49: 0.7505 → 0.0000 (Δ = -0.7505)
+    Feature  54: 1.1433 → 0.0000 (Δ = -1.1433)
+    Feature  55: 0.6813 → 0.0000 (Δ = -0.6813)
+    Feature  56: 0.8508 → 0.0000 (Δ = -0.8508)
+    Feature  59: 3.1551 → 0.0000 (Δ = -3.1551)
+    Feature  60: 0.8790 → 0.0000 (Δ = -0.8790)
+    Feature  62: 0.8316 → 0.0000 (Δ = -0.8316)
+    Feature  80: 1.6238 → 0.1975 (Δ = -1.4263)
+    Feature 112: 0.7118 → 0.0000 (Δ = -0.7118)
+    Feature 116: 2.2612 → 0.0000 (Δ = -2.2612)
+  MILP trial 3: 1.141s ✓  
+Set parameter Username
+Set parameter LicenseID to value 2707036
+Academic license - for non-commercial use only - expires 2026-09-10
+Set parameter Username
+Set parameter LicenseID to value 2707036
+Academic license - for non-commercial use only - expires 2026-09-10
+  ESH trial 3: 4.486s ✓  
+Set parameter Username
+Set parameter LicenseID to value 2707036
+Academic license - for non-commercial use only - expires 2026-09-10
+  ECP trial 3: 2.859s ✓  
+Set parameter Username
+Set parameter LicenseID to value 2707036
+Academic license - for non-commercial use only - expires 2026-09-10
+Set parameter Username
+Set parameter LicenseID to value 2707036
+Academic license - for non-commercial use only - expires 2026-09-10
+  ESH trial 2: 4.624s ✓  
+Set parameter Username
+Set parameter LicenseID to value 2707036
+Academic license - for non-commercial use only - expires 2026-09-10
+  ECP trial 1: 2.964s ✓  
+
+Case 1 Statistics (3 trials each):
+
+  Success Rate:
+    ECP:  3/3 trials successful
+    ESH:  3/3 trials successful
+    MILP: 0/3 trials successful
+
+  Solve Time (seconds):
+    ECP:  Mean=2.906  Median=2.897  Std=0.053  [2.859, 2.964]
+    ESH:  Mean=4.517  Median=4.486  Std=0.095  [4.441, 4.624]
+    MILP: All trials failed (timeout or infeasible)
+
+  Iterations (OA methods):
+    ECP:  Mean=30.0  Median=30.0  Std=0.0  [30, 30]
+    ESH:  Mean=38.0  Median=38.0  Std=0.0  [38, 38]
+
+  ESH vs ECP:
+    ESH is 55.4% slower (+1.611s)
+    ESH uses +8.0 iterations on average
+
+================================================================================
+Test Case 2/3 (Sample #4)
+================================================================================
+  y_factual = 95440.16
+  y_target = 57264.1
+  Reduction: 40.0%
+
+Running 9 trials in randomized order...
+Set parameter Username
+Set parameter LicenseID to value 2707036
+Academic license - for non-commercial use only - expires 2026-09-10
+  ECP trial 3: 2.553s ✓  Set parameter Username
+Set parameter LicenseID to value 2707036
+Academic license - for non-commercial use only - expires 2026-09-10
+Set parameter Username
+Set parameter LicenseID to value 2707036
+Academic license - for non-commercial use only - expires 2026-09-10
+  ESH trial 1: 2.145s ✓  Factual: y = 95440.164
+Target: y = 57264.0984 ± 114.52819687499999
+Parameters: sparsity=0.05, time_limit=600.0s
+Set parameter Username
+Set parameter LicenseID to value 2707036
+Academic license - for non-commercial use only - expires 2026-09-10
+Solving MIP...
+✓ Found counterfactual!
+  Distance: 14.7611
+  Changed features: 13/236
+  Predicted value: 57378.6266
+  Target error: 114.528197
+  Solve time: 1.21s
+
+  Changed features (showing up to 20):
+    Feature  11: 0.8384 → 0.0000 (Δ = -0.8384)
+    Feature  15: 0.7535 → 0.0000 (Δ = -0.7535)
+    Feature  18: 0.6523 → 0.0000 (Δ = -0.6523)
+    Feature  42: 0.7937 → 0.0000 (Δ = -0.7937)
+    Feature  49: 0.6856 → 0.0000 (Δ = -0.6856)
+    Feature  54: 1.0005 → 0.0000 (Δ = -1.0005)
+    Feature  56: 1.0065 → 0.0000 (Δ = -1.0065)
+    Feature  59: 3.0339 → 0.0000 (Δ = -3.0339)
+    Feature  60: 0.9954 → 0.0000 (Δ = -0.9954)
+    Feature  62: 0.7918 → 0.0000 (Δ = -0.7918)
+    Feature  80: 1.6793 → 0.0000 (Δ = -1.6793)
+    Feature 112: 0.6571 → 0.0000 (Δ = -0.6571)
+    Feature 116: 1.8976 → 0.0244 (Δ = -1.8732)
+  MILP trial 3: 1.212s ✓  Set parameter Username
+Set parameter LicenseID to value 2707036
+Academic license - for non-commercial use only - expires 2026-09-10
+  ECP trial 2: 2.342s ✓  Set parameter Username
+Set parameter LicenseID to value 2707036
+Academic license - for non-commercial use only - expires 2026-09-10
+  ECP trial 1: 2.38s ✓  Set parameter Username
+Set parameter LicenseID to value 2707036
+Academic license - for non-commercial use only - expires 2026-09-10
+Set parameter Username
+Set parameter LicenseID to value 2707036
+Academic license - for non-commercial use only - expires 2026-09-10
+  ESH trial 2: 2.121s ✓  Set parameter Username
+Set parameter LicenseID to value 2707036
+Academic license - for non-commercial use only - expires 2026-09-10
+Set parameter Username
+Set parameter LicenseID to value 2707036
+Academic license - for non-commercial use only - expires 2026-09-10
+  ESH trial 3: 2.117s ✓  Factual: y = 95440.164
+Target: y = 57264.0984 ± 114.52819687499999
+Parameters: sparsity=0.05, time_limit=600.0s
+Set parameter Username
+Set parameter LicenseID to value 2707036
+Academic license - for non-commercial use only - expires 2026-09-10
+Solving MIP...
+✓ Found counterfactual!
+  Distance: 14.7611
+  Changed features: 13/236
+  Predicted value: 57378.6266
+  Target error: 114.528197
+  Solve time: 1.22s
+
+  Changed features (showing up to 20):
+    Feature  11: 0.8384 → 0.0000 (Δ = -0.8384)
+    Feature  15: 0.7535 → 0.0000 (Δ = -0.7535)
+    Feature  18: 0.6523 → 0.0000 (Δ = -0.6523)
+    Feature  42: 0.7937 → 0.0000 (Δ = -0.7937)
+    Feature  49: 0.6856 → 0.0000 (Δ = -0.6856)
+    Feature  54: 1.0005 → 0.0000 (Δ = -1.0005)
+    Feature  56: 1.0065 → 0.0000 (Δ = -1.0065)
+    Feature  59: 3.0339 → 0.0000 (Δ = -3.0339)
+    Feature  60: 0.9954 → 0.0000 (Δ = -0.9954)
+    Feature  62: 0.7918 → 0.0000 (Δ = -0.7918)
+    Feature  80: 1.6793 → 0.0000 (Δ = -1.6793)
+    Feature 112: 0.6571 → 0.0000 (Δ = -0.6571)
+    Feature 116: 1.8976 → 0.0244 (Δ = -1.8732)
+  MILP trial 2: 1.221s ✓  Factual: y = 95440.164
+Target: y = 57264.0984 ± 114.52819687499999
+Parameters: sparsity=0.05, time_limit=600.0s
+Set parameter Username
+Set parameter LicenseID to value 2707036
+Academic license - for non-commercial use only - expires 2026-09-10
+Solving MIP...
+✓ Found counterfactual!
+  Distance: 14.7611
+  Changed features: 13/236
+  Predicted value: 57378.6266
+  Target error: 114.528197
+  Solve time: 1.22s
+
+  Changed features (showing up to 20):
+    Feature  11: 0.8384 → 0.0000 (Δ = -0.8384)
+    Feature  15: 0.7535 → 0.0000 (Δ = -0.7535)
+    Feature  18: 0.6523 → 0.0000 (Δ = -0.6523)
+    Feature  42: 0.7937 → 0.0000 (Δ = -0.7937)
+    Feature  49: 0.6856 → 0.0000 (Δ = -0.6856)
+    Feature  54: 1.0005 → 0.0000 (Δ = -1.0005)
+    Feature  56: 1.0065 → 0.0000 (Δ = -1.0065)
+    Feature  59: 3.0339 → 0.0000 (Δ = -3.0339)
+    Feature  60: 0.9954 → 0.0000 (Δ = -0.9954)
+    Feature  62: 0.7918 → 0.0000 (Δ = -0.7918)
+    Feature  80: 1.6793 → 0.0000 (Δ = -1.6793)
+    Feature 112: 0.6571 → 0.0000 (Δ = -0.6571)
+    Feature 116: 1.8976 → 0.0244 (Δ = -1.8732)
+  MILP trial 1: 1.221s ✓  
+
+Case 2 Statistics (3 trials each):
+
+  Success Rate:
+    ECP:  3/3 trials successful
+    ESH:  3/3 trials successful
+    MILP: 0/3 trials successful
+
+  Solve Time (seconds):
+    ECP:  Mean=2.425  Median=2.380  Std=0.113  [2.342, 2.553]
+    ESH:  Mean=2.128  Median=2.121  Std=0.015  [2.117, 2.145]
+    MILP: All trials failed (timeout or infeasible)
+
+  Iterations (OA methods):
+    ECP:  Mean=23.0  Median=23.0  Std=0.0  [23, 23]
+    ESH:  Mean=22.0  Median=22.0  Std=0.0  [22, 22]
+
+  ESH vs ECP:
+    ESH is 12.3% faster (-0.298s)
+    ESH uses -1.0 iterations on average
+
+================================================================================
+Test Case 3/3 (Sample #12)
+================================================================================
+  y_factual = 96844.52
+  y_target = 58106.71
+  Reduction: 40.0%
+
+Running 9 trials in randomized order...
+Set parameter Username
+Set parameter LicenseID to value 2707036
+Academic license - for non-commercial use only - expires 2026-09-10
+  ECP trial 1: 4.227s ✓  Set parameter Username
+Set parameter LicenseID to value 2707036
+Academic license - for non-commercial use only - expires 2026-09-10
+  ECP trial 3: 4.183s ✓  Factual: y = 96844.516
+Target: y = 58106.7094 ± 116.21341875
+Parameters: sparsity=0.05, time_limit=600.0s
+Set parameter Username
+Set parameter LicenseID to value 2707036
+Academic license - for non-commercial use only - expires 2026-09-10
+Solving MIP...
+✓ Found counterfactual!
+  Distance: 14.9302
+  Changed features: 13/236
+  Predicted value: 58222.9228
+  Target error: 116.213419
+  Solve time: 1.11s
+
+  Changed features (showing up to 20):
+    Feature  15: 1.0886 → 0.0107 (Δ = -1.0779)
+    Feature  18: 0.7649 → 0.0000 (Δ = -0.7649)
+    Feature  42: 1.1449 → 0.0000 (Δ = -1.1449)
+    Feature  49: 1.0140 → 0.0000 (Δ = -1.0140)
+    Feature  54: 0.8715 → 0.0000 (Δ = -0.8715)
+    Feature  55: 0.6840 → 0.0000 (Δ = -0.6840)
+    Feature  56: 0.7209 → 0.0000 (Δ = -0.7209)
+    Feature  59: 3.5646 → 0.0000 (Δ = -3.5646)
+    Feature  60: 0.8108 → 0.0000 (Δ = -0.8108)
+    Feature  62: 0.7939 → 0.0000 (Δ = -0.7939)
+    Feature  80: 1.4765 → 0.4017 (Δ = -1.0748)
+    Feature 112: 0.6611 → 0.0000 (Δ = -0.6611)
+    Feature 116: 1.7470 → 0.0000 (Δ = -1.7470)
+  MILP trial 3: 1.113s ✓  
+Set parameter Username
+Set parameter LicenseID to value 2707036
+Academic license - for non-commercial use only - expires 2026-09-10
+  ECP trial 2: 4.413s ✓  
+Set parameter Username
+Set parameter LicenseID to value 2707036
+Academic license - for non-commercial use only - expires 2026-09-10
+Set parameter Username
+Set parameter LicenseID to value 2707036
+Academic license - for non-commercial use only - expires 2026-09-10
+  ESH trial 1: 3.222s ✓  Factual: y = 96844.516
+Target: y = 58106.7094 ± 116.21341875
+Parameters: sparsity=0.05, time_limit=600.0s
+Set parameter Username
+Set parameter LicenseID to value 2707036
+Academic license - for non-commercial use only - expires 2026-09-10
+Solving MIP...
+✓ Found counterfactual!
+  Distance: 14.9302
+  Changed features: 13/236
+  Predicted value: 58222.9228
+  Target error: 116.213419
+  Solve time: 1.09s
+
+  Changed features (showing up to 20):
+    Feature  15: 1.0886 → 0.0107 (Δ = -1.0779)
+    Feature  18: 0.7649 → 0.0000 (Δ = -0.7649)
+    Feature  42: 1.1449 → 0.0000 (Δ = -1.1449)
+    Feature  49: 1.0140 → 0.0000 (Δ = -1.0140)
+    Feature  54: 0.8715 → 0.0000 (Δ = -0.8715)
+    Feature  55: 0.6840 → 0.0000 (Δ = -0.6840)
+    Feature  56: 0.7209 → 0.0000 (Δ = -0.7209)
+    Feature  59: 3.5646 → 0.0000 (Δ = -3.5646)
+    Feature  60: 0.8108 → 0.0000 (Δ = -0.8108)
+    Feature  62: 0.7939 → 0.0000 (Δ = -0.7939)
+    Feature  80: 1.4765 → 0.4017 (Δ = -1.0748)
+    Feature 112: 0.6611 → 0.0000 (Δ = -0.6611)
+    Feature 116: 1.7470 → 0.0000 (Δ = -1.7470)
+  MILP trial 1: 1.09s ✓  Set parameter Username
+Set parameter LicenseID to value 2707036
+Academic license - for non-commercial use only - expires 2026-09-10
+Set parameter Username
+Set parameter LicenseID to value 2707036
+Academic license - for non-commercial use only - expires 2026-09-10
+  ESH trial 3: 3.262s ✓  Set parameter Username
+Set parameter LicenseID to value 2707036
+Academic license - for non-commercial use only - expires 2026-09-10
+Set parameter Username
+Set parameter LicenseID to value 2707036
+Academic license - for non-commercial use only - expires 2026-09-10
+  ESH trial 2: 3.263s ✓  Factual: y = 96844.516
+Target: y = 58106.7094 ± 116.21341875
+Parameters: sparsity=0.05, time_limit=600.0s
+Set parameter Username
+Set parameter LicenseID to value 2707036
+Academic license - for non-commercial use only - expires 2026-09-10
+Solving MIP...
+✓ Found counterfactual!
+  Distance: 14.9302
+  Changed features: 13/236
+  Predicted value: 58222.9228
+  Target error: 116.213419
+  Solve time: 1.17s
+
+  Changed features (showing up to 20):
+    Feature  15: 1.0886 → 0.0107 (Δ = -1.0779)
+    Feature  18: 0.7649 → 0.0000 (Δ = -0.7649)
+    Feature  42: 1.1449 → 0.0000 (Δ = -1.1449)
+    Feature  49: 1.0140 → 0.0000 (Δ = -1.0140)
+    Feature  54: 0.8715 → 0.0000 (Δ = -0.8715)
+    Feature  55: 0.6840 → 0.0000 (Δ = -0.6840)
+    Feature  56: 0.7209 → 0.0000 (Δ = -0.7209)
+    Feature  59: 3.5646 → 0.0000 (Δ = -3.5646)
+    Feature  60: 0.8108 → 0.0000 (Δ = -0.8108)
+    Feature  62: 0.7939 → 0.0000 (Δ = -0.7939)
+    Feature  80: 1.4765 → 0.4017 (Δ = -1.0748)
+    Feature 112: 0.6611 → 0.0000 (Δ = -0.6611)
+    Feature 116: 1.7470 → 0.0000 (Δ = -1.7470)
+  MILP trial 2: 1.165s ✓  
+
+Case 3 Statistics (3 trials each):
+
+  Success Rate:
+    ECP:  3/3 trials successful
+    ESH:  3/3 trials successful
+    MILP: 0/3 trials successful
+
+  Solve Time (seconds):
+    ECP:  Mean=4.274  Median=4.227  Std=0.122  [4.183, 4.413]
+    ESH:  Mean=3.249  Median=3.262  Std=0.024  [3.222, 3.263]
+    MILP: All trials failed (timeout or infeasible)
+
+  Iterations (OA methods):
+    ECP:  Mean=36.0  Median=36.0  Std=0.0  [36, 36]
+    ESH:  Mean=33.0  Median=33.0  Std=0.0  [33, 33]
+
+  ESH vs ECP:
+    ESH is 24.0% faster (-1.025s)
+    ESH uses -3.0 iterations on average
+
+================================================================================
+OVERALL BENCHMARK SUMMARY
+================================================================================
+
+Aggregate Statistics Across All Cases:
+
+Success Rates:
+  ECP:  9/9 trials (100.0%)
+  ESH:  9/9 trials (100.0%)
+  MILP: 0/9 trials (0.0%)
+
+Mean Solve Time:
+  ECP:  3.202 ± 0.959s
+  ESH:  3.298 ± 1.195s
+  MILP: No successful solves
+
+Mean Iterations (OA methods):
+  ECP:  29.7 ± 6.5
+  ESH:  31.0 ± 8.2
+
+ESH vs ECP Overall:
+  ESH is 6.4% slower than ECP on average (1.06x)
+
+Results saved to: /home/gabemed/purdue/ICNN-conterfatual/examples/../tmp/benchmark_results/fair_benchmark_results.csv
+
+================================================================================
+BENCHMARK METHODOLOGY NOTES
+================================================================================
+
+This benchmark follows best practices:
+  ✓ Randomized execution order (eliminates position bias)
+  ✓ Multiple trials per method (3 trials each)
+  ✓ Fresh model reload per trial (eliminates warmstart)
+  ✓ Garbage collection between trials (fair memory state)
+  ✓ Warmup runs excluded from results (Julia compilation)
+  ✓ Statistical analysis (mean, median, std dev)
+  ✓ Controlled random seed (reproducibility)
+
+Results are FAIR and ORDER-INDEPENDENT.
+================================================================================

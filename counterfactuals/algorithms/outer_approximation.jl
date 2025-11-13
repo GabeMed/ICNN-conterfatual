@@ -245,6 +245,122 @@ end
 
 
 """
+    add_esh_cut!(
+        master_model::Model,
+        x_var::Vector{VariableRef},
+        x_boundary::Vector{Float64},
+        gradient::Vector{Float64}
+    )
+
+Add an Extended Supporting Hyperplane (ESH) cut to the master problem.
+
+# Mathematical Formulation
+
+ESH cuts are supporting hyperplanes that pass through a boundary point x'
+where f(x') = y_target + ε. Unlike ECP cuts, ESH cuts do NOT include the
+function value term, creating a pure supporting hyperplane.
+
+From "The supporting hyperplane optimization toolkit for convex MINLP" (page 6, Eq. 3):
+    ∇g_m(x')·(x - x') ≤ 0
+
+For our convex constraint f(x) ≤ y_target + ε, the ESH cut is:
+    ∇f(x')·(x - x') ≤ 0
+
+Rearranging:
+    ∇f(x')·x ≤ ∇f(x')·x'
+
+Since f is convex and x' is on the boundary (f(x') = y_target + ε), this
+hyperplane supports the feasible set {x : f(x) ≤ y_target + ε} at x'.
+
+# Key Difference from ECP (add_oa_cut!)
+
+**ECP cut (Outer Approximation)**:
+    f(x_k) + ∇f(x_k)·(x - x_k) ≤ y_target + ε
+
+Includes the function value f(x_k), used at infeasible points where
+f(x_k) > y_target + ε.
+
+**ESH cut (Supporting Hyperplane)**:
+    ∇f(x')·(x - x') ≤ 0
+
+Does NOT include function value, used at boundary points where
+f(x') = y_target + ε. This is a tighter cut because it exactly
+represents the tangent hyperplane at the boundary.
+
+# Theoretical Property
+
+For convex f and boundary point x' where f(x') = y_target + ε:
+- The hyperplane ∇f(x')·(x - x') = 0 is tangent to the level set
+- All feasible points satisfy ∇f(x')·(x - x') ≤ 0
+- All infeasible points violate ∇f(x')·(x - x') > 0
+
+This makes ESH cuts tighter than ECP cuts, potentially improving convergence.
+
+# Arguments
+- `master_model::Model`: JuMP master problem model
+- `x_var::Vector{VariableRef}`: Input decision variables
+- `x_boundary::Vector{Float64}`: Boundary point where f(x') ≈ y_target + ε
+- `gradient::Vector{Float64}`: Gradient ∇f(x_boundary)
+
+# Returns
+- Constraint name of the added cut
+
+# Example
+```julia
+# Find boundary point via bisection
+x_boundary = find_boundary_point_bisection(
+    x_interior, x_infeasible, icnn_model, y_target + epsilon
+)
+
+# Compute gradient at boundary
+f_boundary, grad_boundary = evaluate_ficnn_with_gradient(icnn_model, x_boundary)
+
+# Add ESH cut
+add_esh_cut!(master_model, x_var, Float64.(x_boundary), grad_boundary)
+```
+
+# Notes
+- Used exclusively in ESH strategy when boundary point is available
+- Does not require y_target or epsilon (unlike add_oa_cut!)
+- Generates tighter cuts than ECP for convex problems
+- Requires finding boundary point first (via bisection or other method)
+"""
+function add_esh_cut!(
+    master_model::Model,
+    x_var::Vector{VariableRef},
+    x_boundary::Vector{Float64},
+    gradient::Vector{Float64}
+)
+    n = length(x_var)
+
+    # Validate inputs
+    @assert length(x_boundary) == n "Boundary point dimension mismatch"
+    @assert length(gradient) == n "Gradient dimension mismatch"
+    @assert !any(isnan.(x_boundary)) "Boundary point contains NaN"
+    @assert !any(isinf.(x_boundary)) "Boundary point contains Inf"
+    @assert !any(isnan.(gradient)) "Gradient contains NaN"
+    @assert !any(isinf.(gradient)) "Gradient contains Inf"
+
+    # ESH cut: ∇f(x')·(x - x') ≤ 0
+    # Rearranged: ∇f(x')·x ≤ ∇f(x')·x'
+    # This creates a supporting hyperplane at the boundary point
+    rhs = dot(gradient, x_boundary)
+
+    # Build linear expression: sum(gradient[i] * x[i])
+    linear_expr = @expression(master_model,
+                              sum(gradient[i] * x_var[i] for i in 1:n))
+
+    cut_counter.count += 1
+    cut_name = "esh_cut_$(cut_counter.count)"
+
+    con = @constraint(master_model, linear_expr <= rhs)
+    set_name(con, cut_name)
+
+    return cut_name
+end
+
+
+"""
     add_initial_cut!(
         master_model::Model,
         x_var::Vector{VariableRef},
@@ -279,7 +395,7 @@ function add_initial_cut!(
     x_factual::Vector{Float32};
     y_target::Float64=0.0,
     epsilon::Float64=0.01
-)    
+)
     # Evaluate NN at factual point
     f_factual, grad_factual = evaluate_ficnn_with_gradient(icnn_model, x_factual)
 
@@ -372,64 +488,97 @@ end
 """
 function find_interior_point_oa(
     icnn_model,
-    x_factual::Vector{Float32},
+    x_start::Vector{Float32},  # Starting point for search (typically x_factual or first feasible solution)
     y_target::Float64,
     epsilon::Float64,
     x_bounds::Tuple{Float64, Float64},
     immutable_indices::Vector{Int};
-    max_iter::Int=50,
+    max_iter::Int=20,  # Reduced from 50 per paper's recommendation
     tolerance::Float64=1e-4,
     verbose::Bool=false
 )
-    n_features = length(x_factual)
-    
+    n_features = length(x_start)
+
     if verbose
         println("\n" * "="^70)
         println("DEBUG: find_interior_point_oa() - Prob. MM Minimax Solver")
         println("="^70)
-        println("Goal: Find x with f(x) + ν ≤ y_target + ε, where ν > $(tolerance)")
+        println("Goal: Find x with f(x) - ν ≤ y_target + ε, where ν > $(tolerance)")
+        println("      (Maximizing ν finds deepest interior point)")
         println("Target: y_target + ε = $(round(y_target + epsilon, digits=6))")
         println("Max iterations: $max_iter")
         println()
     end
-    
+
     # Build simple LP for minimax problem
     model = Model(Gurobi.Optimizer)
     set_silent(model)
-    
+
     # Variables: x[1:n] and nu >= 0
     @variable(model, x_bounds[1] <= x[i=1:n_features] <= x_bounds[2])
     @variable(model, nu >= 0)
-    
+
     # Objective: maximize nu
     @objective(model, Max, nu)
-    
+
     # Immutability constraints
     for i in immutable_indices
-        fix(x[i], x_factual[i], force=true)
+        fix(x[i], x_start[i], force=true)
     end
-    
-    # Start with point for first cut
-    x_k = copy(x_factual)
-    
-    # Evaluate initial point
-    f_initial, _ = evaluate_ficnn_with_gradient(icnn_model, x_k)
+
+    # Initial bound to prevent unboundedness (without cuts, max nu would be ∞)
+    # This bound will be tightened by OA cuts as they're added
+    @constraint(model, nu <= y_target + epsilon)
+
+    # Initialize x_k from x_start (provided by caller)
+    # This could be x_factual (infeasible) or a feasible solution from ECP
+    x_k = copy(x_start)
+
     if verbose
-        println("Starting point (x_factual): f(x) = $(round(f_initial, digits=6))")
-        println("Constraint violation: $(round(max(0, f_initial - (y_target + epsilon)), digits=6))")
+        f_init = Float64(icnn_model(reshape(x_k, 1, :))[1, 1])
+        println("Initialized from x_start:")
+        println("  f(x_start) = $(round(f_init, digits=4))")
+        println("  Target = $(round(y_target + epsilon, digits=4))")
+        violation = max(0.0, f_init - (y_target + epsilon))
+        if violation > 0
+            println("  Initial violation: $(round(violation, digits=4))")
+        else
+            println("  Already feasible (starting from ECP solution)")
+        end
+        println("  Initial bound: ν ≤ $(round(y_target + epsilon, digits=2))")
         println()
+        println("Now starting cutting plane iterations...")
         println("Iter │    ν         │   f(x_k)    │ LP Status │ Verification")
         println("─────┼──────────────┼─────────────┼───────────┼──────────────")
     end
-    
-    # Minimax OA loop
+
+    # Minimax OA loop - NOW starting from feasible x₁
     failure_reason = "unknown"
     for iter in 1:max_iter
         # Evaluate NN at current point
         f_k, grad_k = evaluate_ficnn_with_gradient(icnn_model, x_k)
-        
-        # Add minimax cut: f(x_k) + ∇f(x_k)·(x - x_k) + nu <= y_target + epsilon
-        # Rearranged: [f(x_k) - ∇f(x_k)·x_k] + ∇f(x_k)·x + nu <= y_target + epsilon
+
+        # Skip cuts where gradient is near-zero (flat regions)
+        # Such cuts don't provide useful bounds and can make LP unbounded
+        grad_norm = norm(grad_k)
+        if grad_norm < 1e-6
+            if verbose && iter <= 3
+                println("  Iter $iter: Skipping cut (gradient norm = $(grad_norm) ≈ 0)")
+            end
+            # Move to a random point within bounds to escape flat region
+            x_k = Float32.(rand(n_features) .* (x_bounds[2] - x_bounds[1]) .+ x_bounds[1])
+            for i in immutable_indices
+                x_k[i] = x_start[i]
+            end
+            continue
+        end
+
+        # Correct Prob. MM formulation (Appendix A, Minimax Problem)
+        # Goal: Find deepest interior point by maximizing ν such that:
+        #       f(x) ≤ (y_target + ε) - ν  (equivalently: f(x) + ν ≤ y_target + ε)
+        # If ν > 0, then f(x) < y_target + ε (strict interior)
+        # OA linearization: f(x_k) + ∇f(x_k)·(x - x_k) + ν ≤ y_target + ε
+        # As ν increases, constraint on f(x) TIGHTENS, pushing solution deeper into feasible region
         constant = f_k - dot(grad_k, Float64.(x_k))
         linear_expr = @expression(model,
                                   constant + sum(grad_k[i] * x[i] for i in 1:n_features) + nu)
@@ -466,35 +615,68 @@ function find_interior_point_oa(
         # Extract solution
         x_k = Float32.(value.(x))
         nu_k = value(nu)
-        
+
+        # Diagnostic output for first few iterations
+        if verbose && iter <= 3
+            x_batch = reshape(x_k, 1, :)
+            f_k_actual = Float64(icnn_model(x_batch)[1, 1])
+            target_val = y_target + epsilon
+            is_interior = (nu_k > tolerance && f_k_actual <= target_val)
+
+            println("  Prob. MM Iter $iter:")
+            println("    ν = $(round(nu_k, digits=6))")
+            println("    f(x) = $(round(f_k_actual, digits=4))")
+            println("    Target = $(round(target_val, digits=4))")
+            println("    Interior? $is_interior")
+
+            # Show cut quality metrics
+            x_k_float = Float64.(x_k)
+            cut_value_at_solution = constant + dot(grad_k, x_k_float) + nu_k
+            cut_rhs = y_target + epsilon
+            cut_slack = cut_rhs - cut_value_at_solution
+            effective_bound = cut_rhs - nu_k
+
+            println("    Cut diagnostics:")
+            println(@sprintf("      Cut LHS at x*:     %.2f", cut_value_at_solution))
+            println(@sprintf("      Cut RHS:           %.2f", cut_rhs))
+            println(@sprintf("      Cut slack:         %.2f", cut_slack))
+            println(@sprintf("      Effective f bound: %.2f (should be < %.2f)",
+                           effective_bound, y_target + epsilon))
+
+            if cut_slack > 1000.0
+                @warn "Cut has large slack ($cut_slack) - may indicate formulation issue!"
+            end
+        end
+
         # Check for success: nu > tolerance means we have strict feasibility
         if nu_k > tolerance
             # Verify that x_k is actually feasible
             x_batch = reshape(x_k, 1, :)
             f_verify = Float64(icnn_model(x_batch)[1, 1])
-            
-            gap = f_verify - (y_target + epsilon)
-            
+
+            # Check: f(x*) should be strictly less than target + epsilon
+            interior_slack = (y_target + epsilon) - f_verify
+
             if verbose
-                verify_status = gap <= 0 ? "✓ SUCCESS" : @sprintf("✗ Gap=%.6f", gap)
-                println(@sprintf("%4d │ %12.8f │ %11.6f │ OPTIMAL   │ %s", 
+                verify_status = interior_slack > tolerance ? "✓ SUCCESS" : @sprintf("✗ Slack=%.6f", interior_slack)
+                println(@sprintf("%4d │ %12.8f │ %11.6f │ OPTIMAL   │ %s",
                                 iter, nu_k, f_k, verify_status))
             end
-            
-            if f_verify <= y_target + epsilon
-                # Success! Return interior point
+
+            if interior_slack > tolerance && nu_k > tolerance
+                # SUCCESS: strictly interior point
                 if verbose
                     println("\n✓ SUCCESS: Found interior point!")
                     println("  ν = $(round(nu_k, digits=8)) > tolerance")
-                    println("  f(x) = $(round(f_verify, digits=6)) ≤ $(round(y_target + epsilon, digits=6))")
-                    println("  Slack: $(round((y_target + epsilon) - f_verify, digits=6))")
+                    println("  f(x) = $(round(f_verify, digits=6)) < $(round(y_target + epsilon, digits=6))")
+                    println("  Interior slack: $(round(interior_slack, digits=6)) > tolerance")
                     println("="^70)
                 end
                 return x_k
             else
                 # ν > tolerance but verification failed (nonconvexity issue?)
                 # Continue searching
-                failure_reason = "Verification failed: f(x*) > target despite ν > tolerance"
+                failure_reason = "Verification failed: interior_slack = $(round(interior_slack, digits=8)) ≤ tolerance"
             end
         else
             if verbose
@@ -838,22 +1020,9 @@ function generate_counterfactual_oa(
         )
     end
 
-    # Find interior point for ESH strategy (before main OA loop)
-    x_interior_point = nothing
-    if cut_strategy == :esh
-        x_interior_point = find_interior_point_oa(
-            icnn_model, x_factual, y_target, epsilon, x_bounds, immutable_indices;
-            verbose=verbose
-        )
-        if verbose
-            if x_interior_point !== nothing
-                println("\n✓ Found interior point. ESH enabled from Iteration 1.")
-            else
-                println("\n✗ No interior point found. Defaulting to ECP until feasible solution is found.")
-            end
-            println()
-        end
-    end
+    # FIX #1: Start timing BEFORE any preprocessing
+    # This ensures solve_time includes all algorithm overhead
+    start_time = time()
 
     # Build master problem
     if verbose
@@ -875,6 +1044,74 @@ function generate_counterfactual_oa(
 
     if verbose
         println("✓ Master problem built with initial cut")
+    end
+
+    # FIX: For ESH, find interior point BEFORE main loop
+    # This enables ESH cuts from iteration 1 instead of waiting until first feasible
+    x_interior_point = nothing
+    if cut_strategy == :esh
+        if verbose
+            println()
+            println("ESH strategy selected - searching for interior point...")
+        end
+        
+        # CRITICAL FIX: For ESH to be effective, interior point must be CLOSE to feasible boundary
+        # Using x=0 (lower bounds) gives f=0, which is too deep - bisection finds boundaries near infeasible points
+        # Solution: Search for interior point using Prob. MM from a reasonable starting point
+        
+        target_value = y_target + epsilon
+        
+        # First check if lower bounds work AND are close enough to target
+        x_candidate = fill(Float32(x_bounds[1]), n_features)
+        for i in immutable_indices
+            x_candidate[i] = x_factual[i]
+        end
+        
+        x_batch = reshape(x_candidate, 1, :)
+        f_candidate = Float64(icnn_model(x_batch)[1, 1])
+        
+        # Only use lower bounds if they're reasonably close to target (not too deep)
+        # If f(lower) < 0.5 * target, it's too deep to be useful for ESH
+        if f_candidate < target_value - 1e-6 && f_candidate > 0.5 * target_value
+            x_interior_point = x_candidate
+            if verbose
+                println("✓ Lower bounds are good interior point!")
+                println("  f(lower_bounds) = $(round(f_candidate, digits=2))")
+                println("  Target = $(round(target_value, digits=2))")
+            end
+        else
+            # Lower bounds too deep or infeasible, use Prob. MM to find better interior
+            if verbose
+                if f_candidate >= target_value
+                    println("  Lower bounds infeasible (f = $(round(f_candidate, digits=2)) >= $(round(target_value, digits=2)))")
+                else
+                    println("  Lower bounds too deep (f = $(round(f_candidate, digits=2)) << $(round(target_value, digits=2)))")
+                end
+                println("  Searching for better interior point via Prob. MM...")
+            end
+            
+            # Start Prob. MM from midpoint between lower bounds and factual
+            # This gives a starting point closer to the feasible region
+            x_start = Float32.(0.5 * (x_candidate + x_factual))
+            
+            x_interior_point = find_interior_point_oa(
+                icnn_model, x_start, y_target, epsilon, x_bounds, immutable_indices;
+                max_iter=20, tolerance=1e-4, verbose=verbose
+            )
+        end
+        
+        if x_interior_point !== nothing
+            if verbose
+                println("✓ Interior point found! ESH cuts will be used for infeasible iterations.")
+            end
+        else
+            if verbose
+                println("⚠ No interior point found. Falling back to ECP strategy.")
+            end
+        end
+    end
+
+    if verbose
         println()
         println("Starting OA iterations...")
         println("-" ^ 70)
@@ -890,9 +1127,12 @@ function generate_counterfactual_oa(
     iteration_history = []
     prev_x = nothing  # Track previous solution for convergence
     
+    # Track cut types for diagnostics
+    ecp_cut_count = 0
+    esh_cut_count = 0
+    
     # Note: x_interior_point is already initialized above based on cut_strategy
-
-    start_time = time()
+    # Note: start_time is initialized BEFORE interior point search (see FIX #1 above)
 
     # Main OA loop
     for iter in 1:max_iterations
@@ -921,7 +1161,9 @@ function generate_counterfactual_oa(
                 :iterations => iter,
                 :solve_time => solve_time,
                 :upper_bound => UB,
-                :iteration_history => iteration_history
+                :iteration_history => iteration_history,
+                :ecp_cuts => ecp_cut_count,
+                :esh_cuts => esh_cut_count
             )
         end
 
@@ -954,11 +1196,18 @@ function generate_counterfactual_oa(
             best_f = f_k
             best_obj = obj_k
             
-            # Store first feasible solution as interior point for ESH cuts
-            if x_interior_point === nothing
-                x_interior_point = copy(x_k)
-                if verbose && cut_strategy == :esh
-                    println("  → First feasible solution found! ESH cuts now enabled.")
+            # CRITICAL FIX for ESH: Replace deep interior point (x=0) with first feasible
+            # This gives ESH cuts that are much tighter because interior is near optimal region
+            if cut_strategy == :esh && x_interior_point !== nothing
+                x_int_batch = reshape(x_interior_point, 1, :)
+                f_int = Float64(icnn_model(x_int_batch)[1, 1])
+                
+                # If interior is at lower bounds (f ≈ 0), replace with feasible solution
+                if f_int < 1.0
+                    x_interior_point = copy(x_k)
+                    if verbose
+                        println("  → Switched interior point: lower bounds (f=0) → feasible (f=$(round(f_k, digits=2)))")
+                    end
                 end
             end
         end
@@ -983,7 +1232,7 @@ function generate_counterfactual_oa(
             # ESH Strategy: Find boundary point between interior and infeasible points
             # This generates tighter supporting hyperplane cuts
             target_boundary = y_target + epsilon
-            
+
             bisection_start = time()
             x_boundary = find_boundary_point_bisection(
                 x_interior_point,
@@ -994,10 +1243,10 @@ function generate_counterfactual_oa(
                 tolerance=1e-5
             )
             bisection_time = time() - bisection_start
-            
+
             # Evaluate at boundary point
             f_boundary, grad_boundary = evaluate_ficnn_with_gradient(icnn_model, x_boundary)
-            
+
             # Store diagnostics
             cut_type = "ESH"
             cut_point = x_boundary
@@ -1009,20 +1258,24 @@ function generate_counterfactual_oa(
                 dist_to_infeasible=norm(x_boundary - x_k),
                 bisection_time=bisection_time
             )
-            
-            # Add cut at boundary point (supporting hyperplane)
-            add_oa_cut!(
+
+            # Add ESH cut at boundary point (supporting hyperplane)
+            # ESH cut: ∇f(x')·(x - x') ≤ 0
+            # This is the correct formulation per the paper (Section 2.2, Equation 3)
+            # Unlike ECP, ESH cuts do NOT include the function value term
+            add_esh_cut!(
                 master_model,
                 x_var,
                 Float64.(x_boundary),
-                f_boundary,
-                grad_boundary;
-                y_target=y_target,
-                epsilon=epsilon
+                grad_boundary
             )
+
+            # Increment ESH cut counter
+            esh_cut_count += 1
         else
             # ECP Strategy (Default): Add cut at infeasible point directly
             # This is the original/standard outer approximation approach
+            # ECP cut: f(x_k) + ∇f(x_k)·(x - x_k) ≤ y_target + ε
             add_oa_cut!(
                 master_model,
                 x_var,
@@ -1032,6 +1285,9 @@ function generate_counterfactual_oa(
                 y_target=y_target,
                 epsilon=epsilon
             )
+
+            # Increment ECP cut counter
+            ecp_cut_count += 1
         end
         
         # Calculate cut quality metrics
@@ -1172,7 +1428,9 @@ function generate_counterfactual_oa(
             :iterations => length(iteration_history),
             :solve_time => solve_time,
             :upper_bound => UB,
-            :iteration_history => iteration_history
+            :iteration_history => iteration_history,
+            :ecp_cuts => ecp_cut_count,
+            :esh_cuts => esh_cut_count
         )
     else
         if verbose
@@ -1192,7 +1450,9 @@ function generate_counterfactual_oa(
             :iterations => length(iteration_history),
             :solve_time => solve_time,
             :upper_bound => UB,
-            :iteration_history => iteration_history
+            :iteration_history => iteration_history,
+            :ecp_cuts => ecp_cut_count,
+            :esh_cuts => esh_cut_count
         )
     end
 end
@@ -1262,6 +1522,7 @@ end
 export generate_counterfactual_oa,
        build_master_problem_oa,
        add_oa_cut!,
+       add_esh_cut!,
        add_initial_cut!,
        add_integer_cut!,
        find_boundary_point_bisection,

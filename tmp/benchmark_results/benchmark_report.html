@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Benchmark Results - 40.0% Cost Reduction</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background-color: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #2c3e50;
+            border-bottom: 3px solid #3498db;
+            padding-bottom: 10px;
+        }
+        h2 {
+            color: #34495e;
+            margin-top: 30px;
+            border-bottom: 2px solid #ecf0f1;
+            padding-bottom: 8px;
+        }
+        .experiment-config {
+            background-color: #ecf0f1;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+        .experiment-config p {
+            margin: 5px 0;
+            font-size: 16px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        th {
+            background-color: #3498db;
+            color: white;
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+        }
+        td {
+            padding: 10px 12px;
+            border-bottom: 1px solid #ecf0f1;
+        }
+        tr:hover {
+            background-color: #f8f9fa;
+        }
+        .metric-value {
+            font-weight: bold;
+            color: #2980b9;
+        }
+        .success-100 {
+            color: #27ae60;
+            font-weight: bold;
+        }
+        .success-partial {
+            color: #f39c12;
+            font-weight: bold;
+        }
+        .success-fail {
+            color: #e74c3c;
+            font-weight: bold;
+        }
+        .highlight-best {
+            background-color: #d5f4e6;
+            font-weight: bold;
+        }
+        .note {
+            font-style: italic;
+            color: #7f8c8d;
+            margin-top: 10px;
+        }
+        .summary-box {
+            background-color: #e8f4f8;
+            border-left: 4px solid #3498db;
+            padding: 15px;
+            margin: 20px 0;
+        }
+        .comparison {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 15px;
+            margin: 20px 0;
+        }
+        .comparison-card {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            border: 2px solid #dee2e6;
+        }
+        .comparison-card h3 {
+            margin-top: 0;
+            color: #495057;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Benchmark Results: Counterfactual Generation Methods</h1>
+        
+        <div class="experiment-config">
+            <p><strong>Experiment:</strong> 40.0% cost reduction</p>
+            <p><strong>Number of test cases:</strong> 3</p>
+            <p><strong>Trials per method:</strong> 3</p>
+            <p><strong>Methods compared:</strong> ECP (Extended Cutting Plane), ESH (Extended Supporting Hyperplane), MILP (Mixed-Integer Linear Programming)</p>
+        </div>
+
+        <h2>Table 1: Average Performance for 40.0% Reduction</h2>
+        <div class="comparison">
+            <div class="comparison-card">
+                <h3>ECP Method</h3>
+                <p><strong>Success Rate:</strong> <span class="success-100">100.0%</span></p>
+                <p><strong>Avg Time (40.0% reduction):</strong> <span class="metric-value">3.105s</span></p>
+                <p><strong>Avg Iterations:</strong> <span class="metric-value">29.7</span></p>
+            </div>
+            <div class="comparison-card">
+                <h3>ESH Method</h3>
+                <p><strong>Success Rate:</strong> <span class="success-100">100.0%</span></p>
+                <p><strong>Avg Time (40.0% reduction):</strong> <span class="metric-value">3.217s</span></p>
+                <p><strong>Avg Iterations:</strong> <span class="metric-value">31.0</span></p>
+            </div>
+            <div class="comparison-card">
+                <h3>MILP Method</h3>
+                <p><strong>Success Rate:</strong> <span class="success-100">100.0%</span></p>
+                <p><strong>Avg Time (40.0% reduction):</strong> <span class="metric-value">1.135s</span></p>
+                <p><strong>Avg Iterations:</strong> <span class="metric-value">N/A</span></p>
+            </div>
+        </div>
+        <div class="summary-box">
+            <h3>Key Results for 40.0% Cost Reduction:</h3>
+<p><strong>ECP:</strong> 2.74x slower than MILP (3.105s vs 1.135s)</p><p><strong>ESH:</strong> 2.84x slower than MILP (3.217s vs 1.135s)</p><p><strong>ESH vs ECP:</strong> ESH is 3.6% slower (3.217s vs 3.105s)</p>        </div>
+
+        <h2>Table 2: Results by Test Case (40.0% Reduction)</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Case</th>
+                    <th>Factual Cost</th>
+                    <th>Target Cost</th>
+                    <th>ECP Time (s)</th>
+                    <th>ESH Time (s)</th>
+                    <th>MILP Time (s)</th>
+                    <th>ECP Iter</th>
+                    <th>ESH Iter</th>
+                    <th>Success (E/S/M)</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>1</td>
+                    <td>99675.0</td>
+                    <td>59805.0</td>
+                    <td>2.862</td>
+                    <td>4.442</td>
+                    <td class="highlight-best">1.131</td>
+                    <td>30.0</td>
+                    <td>38.0</td>
+                    <td>3/3/3</td>
+                </tr>
+                <tr>
+                    <td>2</td>
+                    <td>95440.0</td>
+                    <td>57264.0</td>
+                    <td>2.332</td>
+                    <td>2.011</td>
+                    <td class="highlight-best">1.207</td>
+                    <td>23.0</td>
+                    <td>22.0</td>
+                    <td>3/3/3</td>
+                </tr>
+                <tr>
+                    <td>3</td>
+                    <td>96845.0</td>
+                    <td>58107.0</td>
+                    <td>4.123</td>
+                    <td>3.197</td>
+                    <td class="highlight-best">1.065</td>
+                    <td>36.0</td>
+                    <td>33.0</td>
+                    <td>3/3/3</td>
+                </tr>
+            </tbody>
+        </table>
+        <p class="note">Note: Best time for each case is highlighted. All times are for 40.0% cost reduction.</p>
+        <p class="note">Success column shows ECP/ESH/MILP successful trials out of 3.</p>
+
+        <h2>Statistical Summary (40.0% Reduction)</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Metric</th>
+                    <th>Mean</th>
+                    <th>Median</th>
+                    <th>Min</th>
+                    <th>Max</th>
+                    <th>Std Dev</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>ECP Time (s)</strong></td>
+                    <td>3.105</td>
+                    <td>2.862</td>
+                    <td>2.332</td>
+                    <td>4.123</td>
+                    <td>0.92</td>
+                </tr>
+                <tr>
+                    <td><strong>ESH Time (s)</strong></td>
+                    <td>3.217</td>
+                    <td>3.197</td>
+                    <td>2.011</td>
+                    <td>4.442</td>
+                    <td>1.216</td>
+                </tr>
+                <tr>
+                    <td><strong>MILP Time (s)</strong></td>
+                    <td>1.135</td>
+                    <td>1.131</td>
+                    <td>1.065</td>
+                    <td>1.207</td>
+                    <td>0.071</td>
+                </tr>
+                <tr>
+                    <td><strong>ECP Iterations</strong></td>
+                    <td>29.7</td>
+                    <td>30.0</td>
+                    <td>23.0</td>
+                    <td>36.0</td>
+                    <td>6.5</td>
+                </tr>
+                <tr>
+                    <td><strong>ESH Iterations</strong></td>
+                    <td>31.0</td>
+                    <td>33.0</td>
+                    <td>22.0</td>
+                    <td>38.0</td>
+                    <td>8.2</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h2>Methodology</h2>
+        <div class="summary-box">
+            <p><strong>Benchmark Design:</strong></p>
+            <ul>
+                <li>Randomized execution order to eliminate position bias</li>
+                <li>Multiple trials per method (3 trials each)</li>
+                <li>Fresh model reload per trial to eliminate warmstart effects</li>
+                <li>Garbage collection between trials for fair memory state</li>
+                <li>Warmup runs excluded from results (Julia compilation)</li>
+                <li>Statistical analysis with mean, median, and standard deviation</li>
+                <li>Controlled random seed for reproducibility</li>
+            </ul>
+            <p><strong>Reduction Target:</strong> 40.0% cost reduction across all test cases</p>
+        </div>
+
+        <p class="note" style="margin-top: 30px; text-align: center;">
+            Generated on 2025-11-13 17:40:01
+        </p>
+    </div>
+</body>
+</html>

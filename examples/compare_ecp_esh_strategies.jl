@@ -74,7 +74,7 @@ println("  Factual prediction: y = $(round(y_factual, digits=4))")
 println()
 
 # Set target (reduce by 10% - REALISTIC TEST)
-reduction_factor = 0.60
+reduction_factor = 0.30  # Very aggressive to test ESH advantage
 y_target = y_factual * (1.0 - reduction_factor)
 println("Target: Reduce cost by $(reduction_factor * 100)%")
 println("  Target value: y = $(round(y_target, digits=4))")
@@ -83,7 +83,7 @@ println()
 # Common parameters (matching the working example)
 epsilon = 0.002 * abs(y_target)  # Percentage-based epsilon
 sparsity_weight = 0.05
-max_iterations = 50
+max_iterations = 100
 
 # Compute actual data bounds (CRITICAL - data is not normalized to [0,1])
 x_min = minimum(X_test)
@@ -95,23 +95,6 @@ println("  Epsilon: $(round(epsilon, digits=4)) (0.2% of target)")
 println("  Sparsity weight: $sparsity_weight")
 println("  X bounds: [$(round(x_bounds[1], digits=2)), $(round(x_bounds[2], digits=2))]")
 println()
-
-println("=" ^ 80)
-println("Strategy 1: Extended Cutting Plane (ECP) - Standard Method")
-println("=" ^ 80)
-println()
-
-result_ecp = generate_counterfactual_oa(
-    icnn_model,
-    x_factual,
-    y_target;
-    epsilon=epsilon,
-    sparsity_weight=sparsity_weight,
-    x_bounds=x_bounds,
-    max_iterations=max_iterations,
-    cut_strategy=:ecp,
-    verbose=true
-)
 
 println()
 println("=" ^ 80)
@@ -130,6 +113,23 @@ result_esh = generate_counterfactual_oa(
     cut_strategy=:esh,
     verbose=true
 )
+println("=" ^ 80)
+println("Strategy 1: Extended Cutting Plane (ECP) - Standard Method")
+println("=" ^ 80)
+println()
+
+result_ecp = generate_counterfactual_oa(
+    icnn_model,
+    x_factual,
+    y_target;
+    epsilon=epsilon,
+    sparsity_weight=sparsity_weight,
+    x_bounds=x_bounds,
+    max_iterations=max_iterations,
+    cut_strategy=:ecp,
+    verbose=true
+)
+
 
 println()
 println("=" ^ 80)

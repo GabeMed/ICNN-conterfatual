@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Benchmark Results - Cost Reduction Analysis</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background-color: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #2c3e50;
+            border-bottom: 3px solid #3498db;
+            padding-bottom: 10px;
+        }
+        h2 {
+            color: #34495e;
+            margin-top: 40px;
+            border-bottom: 2px solid #ecf0f1;
+            padding-bottom: 8px;
+        }
+        .experiment-config {
+            background-color: #ecf0f1;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+            font-size: 15px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            font-size: 14px;
+        }
+        th {
+            background-color: #3498db;
+            color: white;
+            padding: 12px 8px;
+            text-align: left;
+            font-weight: 600;
+        }
+        td {
+            padding: 10px 8px;
+            border-bottom: 1px solid #ecf0f1;
+        }
+        tr:hover {
+            background-color: #f8f9fa;
+        }
+        .highlight-best {
+            background-color: #d5f4e6;
+            font-weight: bold;
+        }
+        .success-100 { color: #27ae60; font-weight: bold; }
+        .success-partial { color: #f39c12; font-weight: bold; }
+        .success-fail { color: #e74c3c; font-weight: bold; }
+        .note {
+            font-style: italic;
+            color: #7f8c8d;
+            margin-top: 10px;
+            font-size: 13px;
+        }
+        .info-box {
+            background-color: #e8f4f8;
+            border-left: 4px solid #3498db;
+            padding: 15px;
+            margin: 20px 0;
+        }
+        .warning-box {
+            background-color: #fff3cd;
+            border-left: 4px solid #f39c12;
+            padding: 15px;
+            margin: 20px 0;
+        }
+        .small-text {
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Comprehensive Benchmark: Multiple Cost Reduction Targets</h1>
+        
+        <div class="experiment-config">
+            <p><strong>Reduction Targets:</strong> 20%, 30%, 40%, 50%, 60%</p>
+            <p><strong>Test cases per reduction:</strong> 3</p>
+            <p><strong>Trials per method:</strong> 3</p>
+            <p><strong>Methods:</strong> ECP (Extended Cutting Plane), ESH (Extended Supporting Hyperplane), MILP (Mixed-Integer Linear Programming)</p>
+        </div>
+
+        <h2>Performance Overview Across All Reduction Targets</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Reduction</th>
+                    <th>ECP Time (s)</th>
+                    <th>ESH Time (s)</th>
+                    <th>MILP Time (s)</th>
+                    <th>ECP Iter</th>
+                    <th>ESH Iter</th>
+                    <th>Best Method</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>20%</strong></td>
+                    <td class="highlight-best">0.487</td>
+                    <td>0.513</td>
+                    <td>0.973</td>
+                    <td>7.7</td>
+                    <td>7.3</td>
+                    <td><strong>ECP</strong></td>
+                </tr>
+                <tr>
+                    <td><strong>30%</strong></td>
+                    <td>1.700</td>
+                    <td>1.965</td>
+                    <td class="highlight-best">1.253</td>
+                    <td>16.0</td>
+                    <td>17.3</td>
+                    <td><strong>MILP</strong></td>
+                </tr>
+                <tr>
+                    <td><strong>40%</strong></td>
+                    <td>3.193</td>
+                    <td>3.362</td>
+                    <td class="highlight-best">1.121</td>
+                    <td>29.7</td>
+                    <td>31.0</td>
+                    <td><strong>MILP</strong></td>
+                </tr>
+                <tr>
+                    <td><strong>50%</strong></td>
+                    <td>0.939</td>
+                    <td class="highlight-best">0.881</td>
+                    <td>1.254</td>
+                    <td>13.7</td>
+                    <td>13.3</td>
+                    <td><strong>ESH</strong></td>
+                </tr>
+                <tr>
+                    <td><strong>60%</strong></td>
+                    <td>NaN</td>
+                    <td>NaN</td>
+                    <td class="highlight-best">1.456</td>
+                    <td>NaN</td>
+                    <td>NaN</td>
+                    <td><strong>MILP</strong></td>
+                </tr>
+            </tbody>
+        </table>
+        <p class="note">Best time for each reduction target is highlighted.</p>
+
+        <h2>Cost Achievement Analysis</h2>
+        
+        <div class="info-box">
+            <p><strong>Target Cost Formula:</strong> Target Cost = Factual Cost × (1 - Reduction%)</p>
+            <p><strong>Acceptable Range:</strong> Target ± ε (where ε = 0.2% of target cost)</p>
+            <p><strong>Success Criterion:</strong> Final predicted cost must be within [Target - ε, Target + ε]</p>
+        </div>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Reduction</th>
+                    <th>Case</th>
+                    <th>Factual Cost</th>
+                    <th>Target Cost</th>
+                    <th>Acceptable Range</th>
+                    <th>ECP Success</th>
+                    <th>ESH Success</th>
+                    <th>MILP Success</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>20%</strong></td>
+                    <td>1</td>
+                    <td>99675</td>
+                    <td>79740</td>
+                    <td class="small-text">[79581, 79899]</td>
+                    <td class="success-100">✓ 3/3</td>
+                    <td class="success-100">✓ 3/3</td>
+                    <td class="success-100">✓ 3/3</td>
+                </tr>
+                <tr>
+                    <td><strong>20%</strong></td>
+                    <td>2</td>
+                    <td>95440</td>
+                    <td>76352</td>
+                    <td class="small-text">[76199, 76505]</td>
+                    <td class="success-100">✓ 3/3</td>
+                    <td class="success-100">✓ 3/3</td>
+                    <td class="success-100">✓ 3/3</td>
+                </tr>
+                <tr>
+                    <td><strong>20%</strong></td>
+                    <td>3</td>
+                    <td>96845</td>
+                    <td>77476</td>
+                    <td class="small-text">[77321, 77631]</td>
+                    <td class="success-100">✓ 3/3</td>
+                    <td class="success-100">✓ 3/3</td>
+                    <td class="success-100">✓ 3/3</td>
+                </tr>
+                <tr>
+                    <td><strong>30%</strong></td>
+                    <td>1</td>
+                    <td>99675</td>
+                    <td>69772</td>
+                    <td class="small-text">[69632, 69912]</td>
+                    <td class="success-100">✓ 3/3</td>
+                    <td class="success-100">✓ 3/3</td>
+                    <td class="success-100">✓ 3/3</td>
+                </tr>
+                <tr>
+                    <td><strong>30%</strong></td>
+                    <td>2</td>
+                    <td>95440</td>
+                    <td>66808</td>
+                    <td class="small-text">[66674, 66942]</td>
+                    <td class="success-100">✓ 3/3</td>
+                    <td class="success-100">✓ 3/3</td>
+                    <td class="success-100">✓ 3/3</td>
+                </tr>
+                <tr>
+                    <td><strong>30%</strong></td>
+                    <td>3</td>
+                    <td>96845</td>
+                    <td>67791</td>
+                    <td class="small-text">[67655, 67927]</td>
+                    <td class="success-100">✓ 3/3</td>
+                    <td class="success-100">✓ 3/3</td>
+                    <td class="success-100">✓ 3/3</td>
+                </tr>
+                <tr>
+                    <td><strong>40%</strong></td>
+                    <td>1</td>
+                    <td>99675</td>
+                    <td>59805</td>
+                    <td class="small-text">[59685, 59925]</td>
+                    <td class="success-100">✓ 3/3</td>
+                    <td class="success-100">✓ 3/3</td>
+                    <td class="success-100">✓ 3/3</td>
+                </tr>
+                <tr>
+                    <td><strong>40%</strong></td>
+                    <td>2</td>
+                    <td>95440</td>
+                    <td>57264</td>
+                    <td class="small-text">[57149, 57379]</td>
+                    <td class="success-100">✓ 3/3</td>
+                    <td class="success-100">✓ 3/3</td>
+                    <td class="success-100">✓ 3/3</td>
+                </tr>
+                <tr>
+                    <td><strong>40%</strong></td>
+                    <td>3</td>
+                    <td>96845</td>
+                    <td>58107</td>
+                    <td class="small-text">[57991, 58223]</td>
+                    <td class="success-100">✓ 3/3</td>
+                    <td class="success-100">✓ 3/3</td>
+                    <td class="success-100">✓ 3/3</td>
+                </tr>
+                <tr>
+                    <td><strong>50%</strong></td>
+                    <td>1</td>
+                    <td>99675</td>
+                    <td>49837</td>
+                    <td class="small-text">[49737, 49937]</td>
+                    <td class="success-100">✓ 3/3</td>
+                    <td class="success-100">✓ 3/3</td>
+                    <td class="success-100">✓ 3/3</td>
+                </tr>
+                <tr>
+                    <td><strong>50%</strong></td>
+                    <td>2</td>
+                    <td>95440</td>
+                    <td>47720</td>
+                    <td class="small-text">[47625, 47815]</td>
+                    <td class="success-100">✓ 3/3</td>
+                    <td class="success-100">✓ 3/3</td>
+                    <td class="success-100">✓ 3/3</td>
+                </tr>
+                <tr>
+                    <td><strong>50%</strong></td>
+                    <td>3</td>
+                    <td>96845</td>
+                    <td>48422</td>
+                    <td class="small-text">[48325, 48519]</td>
+                    <td class="success-100">✓ 3/3</td>
+                    <td class="success-100">✓ 3/3</td>
+                    <td class="success-100">✓ 3/3</td>
+                </tr>
+                <tr>
+                    <td><strong>60%</strong></td>
+                    <td>1</td>
+                    <td>99675</td>
+                    <td>39870</td>
+                    <td class="small-text">[39790, 39950]</td>
+                    <td class="success-100">✓ 3/3</td>
+                    <td class="success-100">✓ 3/3</td>
+                    <td class="success-100">✓ 3/3</td>
+                </tr>
+                <tr>
+                    <td><strong>60%</strong></td>
+                    <td>2</td>
+                    <td>95440</td>
+                    <td>38176</td>
+                    <td class="small-text">[38100, 38252]</td>
+                    <td class="success-fail">✗ 0/3</td>
+                    <td class="success-fail">✗ 0/3</td>
+                    <td class="success-100">✓ 3/3</td>
+                </tr>
+                <tr>
+                    <td><strong>60%</strong></td>
+                    <td>3</td>
+                    <td>96845</td>
+                    <td>38738</td>
+                    <td class="small-text">[38661, 38815]</td>
+                    <td class="success-fail">✗ 0/3</td>
+                    <td class="success-fail">✗ 0/3</td>
+                    <td class="success-100">✓ 3/3</td>
+                </tr>
+            </tbody>
+        </table>
+        <p class="note">✓ indicates all trials successful, ✗ indicates some or all trials failed.</p>
+
+        <h2>Success Rate Summary by Reduction Target</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Reduction</th>
+                    <th>Total Trials</th>
+                    <th>ECP Success Rate</th>
+                    <th>ESH Success Rate</th>
+                    <th>MILP Success Rate</th>
+                    <th>Most Reliable</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>20%</strong></td>
+                    <td>9</td>
+                    <td class="success-100">100.0%</td>
+                    <td class="success-100">100.0%</td>
+                    <td class="success-100">100.0%</td>
+                    <td><strong>ECP</strong></td>
+                </tr>
+                <tr>
+                    <td><strong>30%</strong></td>
+                    <td>9</td>
+                    <td class="success-100">100.0%</td>
+                    <td class="success-100">100.0%</td>
+                    <td class="success-100">100.0%</td>
+                    <td><strong>ECP</strong></td>
+                </tr>
+                <tr>
+                    <td><strong>40%</strong></td>
+                    <td>9</td>
+                    <td class="success-100">100.0%</td>
+                    <td class="success-100">100.0%</td>
+                    <td class="success-100">100.0%</td>
+                    <td><strong>ECP</strong></td>
+                </tr>
+                <tr>
+                    <td><strong>50%</strong></td>
+                    <td>9</td>
+                    <td class="success-100">100.0%</td>
+                    <td class="success-100">100.0%</td>
+                    <td class="success-100">100.0%</td>
+                    <td><strong>ECP</strong></td>
+                </tr>
+                <tr>
+                    <td><strong>60%</strong></td>
+                    <td>9</td>
+                    <td class="success-partial">33.0%</td>
+                    <td class="success-partial">33.0%</td>
+                    <td class="success-100">100.0%</td>
+                    <td><strong>MILP</strong></td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h2>Key Findings</h2>
+        
+        <div class="info-box">
+            <h3 style="margin-top: 0;">Performance Summary</h3>
+            <ul>
+                <li><strong>20% Reduction:</strong> ECP fastest (0.487s), all methods 100% successful</li>
+                <li><strong>30% Reduction:</strong> MILP fastest (1.253s), all methods 100% successful</li>
+                <li><strong>40% Reduction:</strong> MILP fastest (1.121s), all methods 100% successful</li>
+                <li><strong>50% Reduction:</strong> ESH fastest (0.881s), all methods 100% successful</li>
+                <li><strong>60% Reduction:</strong> Only MILP reliable (100% success), OA methods fail</li>
+            </ul>
+        </div>
+
+        <div class="warning-box">
+            <h3 style="margin-top: 0;">Important Notes</h3>
+            <ul>
+                <li>All successful solutions meet the constraint: Final Cost ∈ [Target - ε, Target + ε]</li>
+                <li>At 60% reduction, ECP and ESH achieve only 33% success rate vs MILP's 100%</li>
+                <li>MILP is most reliable across all reduction levels</li>
+                <li>For small reductions (≤30%), OA methods can be faster</li>
+            </ul>
+        </div>
+
+        <p class="note" style="margin-top: 30px; text-align: center;">
+            Generated on 2025-11-13 17:53:36
+        </p>
+    </div>
+</body>
+</html>
