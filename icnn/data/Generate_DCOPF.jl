@@ -2,11 +2,9 @@ using Pkg
 
 using PowerModels, JuMP, Ipopt, Gurobi
 using PowerModels
-using Gurobi
 using Distributions
 using BSON
 using Plots
-using Statistics
 
 function generate_truncated_scales(data::Dict, nsamples::Int)
     # Get the total number of buses in the system
@@ -46,101 +44,133 @@ function generate_truncated_scales(data::Dict, nsamples::Int)
 end
 
 
-function run_dc_batch_from_data(data_orig, P_samples, Q_samples, nsamples, solver=Ipopt.Optimizer)
-    # === Extract dimensions ===
-    # total_available: total number of available samples (rows in P_samples)
-    # nbus: number of buses (columns in P_samples)
+function run_ac_dc_batch_from_data(
+    data_orig,
+    P_samples,
+    Q_samples,
+    nsamples;
+    solver=Ipopt.Optimizer
+)
+    # === Extract problem dimensions ===
     total_available, nbus = size(P_samples)
 
-    # === Prepare reference model ===
-    # Create a deep copy of the original data to avoid modifying it
+    # Build reference AC model to determine number of generators (ngen)
     data0 = deepcopy(data_orig)
-
-    # Instantiate a base AC model to determine the number of generators (ngen)
     spec0 = PowerModels.instantiate_model(data0, PowerModels.ACRPowerModel, PowerModels.build_opf)
     ngen = length(spec0.ref[:it][:pm][:nw][0][:gen])
 
-    # === Preallocate result arrays ===
-    # Demand: concatenated active (P) and reactive (Q) demand per bus
-    # DispatchDC: generator dispatch solutions for each valid DC sample
-    # TimeDC: elapsed time for each DC optimization run
-    # ObjDC: objective value of each DC run
+    # === Preallocate results for nsamples requested ===
     Demand = zeros(nsamples, 2 * nbus)
+    DispatchAC = zeros(nsamples, ngen)
     DispatchDC = zeros(nsamples, ngen)
+    TimeAC = zeros(nsamples)
     TimeDC = zeros(nsamples)
+    ObjAC = zeros(nsamples)
     ObjDC = zeros(nsamples)
 
-    # valid_k: counter for successfully solved samples
-    # j: index of the current sample being processed
-    valid_k = 0
-    j = 1
+    valid_k = 0  # counter of valid samples
+    j = 1        # index of current sample
 
     @info "Searching for $nsamples valid samples (total available = $total_available)..."
 
-    # === Main sampling loop ===
+    # === Main Sampling Loop ===
     while valid_k < nsamples && j <= total_available
-        @info "Evaluating sample $j out of $total_available"
-        Pd_i, Qd_i = P_samples[j, :], Q_samples[j, :]
+        @info "Evaluating sample $j of $total_available"
 
+        Pd_i = P_samples[j, :]
+        Qd_i = Q_samples[j, :]
+
+        # ================================
+        # === 1) Solve DC-OPF for sample
+        # ================================
         data_dc = deepcopy(data_orig)
-        t1 = time()
-        res_dc = nothing
         t_dc = 0.0
+        res_dc = nothing
         dc_success = false
 
         try
-            # Run the DC optimization model for this sample
+            t1 = time()
             res_dc = DCPM(data_dc, Pd_i, Qd_i; solver=Gurobi.Optimizer)
             t_dc = time() - t1
             dc_success = res_dc["flag"]
         catch e
-            # If any error occurs during the DC run, log it and continue
             @warn "Sample $j failed in DC with error: $e"
             j += 1
             continue
         end
 
-        # Skip the sample if the DC model did not converge successfully
+        # If DC is infeasible, skip the sample
         if !dc_success
             @warn "Sample $j discarded (DC infeasible or no solution)"
             j += 1
             continue
         end
 
-        # === Store results of valid samples ===
-        if res_dc["flag"]
-            valid_k += 1
-            Demand[valid_k, :] = vcat(Pd_i, Qd_i)
-            DispatchDC[valid_k, :] = res_dc["Pg"]
-            TimeDC[valid_k] = t_dc
-            ObjDC[valid_k] = res_dc["objective"]
-        else
-            @warn "Sample $j discarded (DC infeasible)"
+        # ================================
+        # === 2) Solve AC-OPF for sample
+        # ================================
+        data_ac = deepcopy(data_orig)
+        t_ac = 0.0
+        res_ac = nothing
+
+        try
+            t0 = time()
+            res_ac = ACPM(data_ac, Pd_i, Qd_i; solver=solver)
+            t_ac = time() - t0
+        catch e
+            @warn "Sample $j failed in AC with error: $e"
+            j += 1
+            continue
         end
-        
-        # Move to next sample
+
+        # AC must be feasible
+        if !res_ac["flag"]
+            @warn "Sample $j discarded (AC infeasible)"
+            j += 1
+            continue
+        end
+
+        # ========================================
+        # === 3) Store results of a valid sample
+        # ========================================
+        valid_k += 1
+        Demand[valid_k, :] = vcat(Pd_i, Qd_i)
+        DispatchAC[valid_k, :] = res_ac["Pg"]
+        DispatchDC[valid_k, :] = res_dc["Pg"]
+        TimeAC[valid_k] = t_ac
+        TimeDC[valid_k] = t_dc
+        ObjAC[valid_k] = res_ac["objective"]
+        ObjDC[valid_k] = res_dc["objective"]
+
         j += 1
     end
 
-    # === Final check ===
-    # If fewer valid samples were found than requested, trim the arrays
+    # === Trim output if fewer than nsamples were obtained ===
     if valid_k < nsamples
         @warn "Only $valid_k valid samples obtained out of $nsamples requested."
+
         Demand = Demand[1:valid_k, :]
+        DispatchAC = DispatchAC[1:valid_k, :]
         DispatchDC = DispatchDC[1:valid_k, :]
+        TimeAC = TimeAC[1:valid_k]
         TimeDC = TimeDC[1:valid_k]
+        ObjAC = ObjAC[1:valid_k]
         ObjDC = ObjDC[1:valid_k]
     end
 
-    # === Return all results in a dictionary ===
+    # === Return all results ===
     return Dict(
         "Demand" => Demand,
+        "DispatchAC" => DispatchAC,
         "DispatchDC" => DispatchDC,
+        "TimeAC" => TimeAC,
         "TimeDC" => TimeDC,
+        "ObjAC" => ObjAC,
         "ObjDC" => ObjDC,
         "n_valid" => valid_k
     )
 end
+
 
 
 function DCPM(data, Pd=nothing, Qd=nothing; solver=Gurobi.Optimizer)
@@ -203,11 +233,58 @@ function DCPM(data, Pd=nothing, Qd=nothing; solver=Gurobi.Optimizer)
     )
 end
 
-limit_sample = 10000  # Number of random demand scenarios to generate
-nsamples = 5000        # Number of valid samples desired (target)
+function ACPM(data, Pd=nothing, Qd=nothing; solver=Ipopt.Optimizer)
+    # Paso 1: ordenar los IDs de buses y crear el mapa
+    bus_ids = sort(parse.(Int, collect(keys(data["bus"]))))
+    bus_idx_map = Dict(bus_id => i for (i, bus_id) in enumerate(bus_ids))
 
-# Use path relative to this script's directory so it works from any CWD
-path_data = joinpath(@__DIR__, "data-opf")
+    # step 2  Update the loads 
+    if Pd !== nothing && Qd !== nothing
+        for (load_id, load_data) in data["load"]
+            bus_id = load_data["load_bus"]
+            idx = bus_idx_map[bus_id]
+            data["load"][load_id]["pd"] = Pd[idx]
+            data["load"][load_id]["qd"] = Qd[idx]
+        end
+    end
+
+    # === Build the model ===
+    spec = PowerModels.instantiate_model(
+        data,
+        PowerModels.ACRPowerModel,
+        PowerModels.build_opf
+    )
+    set_time_limit_sec(spec.model, 1100.0)
+    set_silent(spec.model)
+    results = PowerModels.optimize_model!(spec; optimizer=solver)
+
+    # Sort the generators index
+    ref_gen = spec.ref[:it][:pm][:nw][0][:gen]
+    pg_da = spec.var[:it][:pm][:nw][0][:pg]
+    gen_ids_sorted = sort(collect(keys(ref_gen)))
+    Pg_ordered = [
+        JuMP.value(pg_da[g_id])
+        for g_id in gen_ids_sorted
+    ]
+
+    println("satus ACOPF ", JuMP.termination_status(spec.model))
+    return Dict(
+        "flag" => (JuMP.termination_status(spec.model) in (MOI.OPTIMAL, MOI.LOCALLY_SOLVED)),
+        "objective" => JuMP.objective_value(spec.model),
+        "Pg" => Pg_ordered,
+        "results" => results
+    )
+end
+
+
+
+
+
+
+limit_sample = 100 # Number random samples 
+nsamples = 100 # Number until reach lnsamples
+
+path_data = "test_systems/data-opf"
 
 system_name = "pglib_opf_case118_ieee"
 
@@ -219,34 +296,11 @@ PowerModels.calc_thermal_limits!(data)
 
 P_samples, Q_samples = generate_truncated_scales(data, limit_sample)
 
-results = run_dc_batch_from_data(data, P_samples, Q_samples, nsamples)
+results = run_ac_dc_batch_from_data(data, P_samples, Q_samples, nsamples)
 
-println("\n" * "="^70)
-println("DCOPF Data Generation Summary")
-println("="^70)
-println("System: $system_name")
-println("Samples generated: $(results["n_valid"]) / $nsamples requested")
-println("Demand dimension: $(size(results["Demand"], 2))")
-println("Objective range: [$(minimum(results["ObjDC"])), $(maximum(results["ObjDC"]))]")
-println("Objective std: $(std(results["ObjDC"]))")
 
-# Quick quality check
-n_unique = size(unique(results["Demand"], dims=1), 1)
-println("\nQuality Check:")
-println("  Unique samples: $n_unique / $(results["n_valid"])")
-if n_unique < results["n_valid"] * 0.95
-    println("  ⚠️  Warning: Many duplicate samples detected!")
-elseif std(results["ObjDC"]) < 100
-    println("  ⚠️  Warning: Low variance in objectives!")
-else
-    println("  ✅ Data looks good!")
-end
-println("="^70)
-
-# Save results to BSON file
-output_file = joinpath(@__DIR__, "data_$system_name.bson")
-BSON.@save output_file results
-println("\n✅ Data saved to: $output_file")
+# Save and load model (save .json)
+# BSON.@save "test_systems/data_$system_name.bson" results
 
 # k = BSON.load("test_systems/data_$system_name.bson")
 
