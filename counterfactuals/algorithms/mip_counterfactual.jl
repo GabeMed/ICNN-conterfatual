@@ -6,6 +6,11 @@ find a nearby demand x' such that NN(x') ≈ y_target.
 
 Uses Mixed-Integer Programming to encode the neural network
 and minimize the distance while satisfying the target constraint.
+
+# TIMING METHODOLOGY
+All MILP solve times use Gurobi's internal timer (via JuMP.solve_time()) to ensure
+fair comparison across methods and exclude Julia-to-C++ interface overhead.
+Total time includes all overhead for transparency.
 """
 
 using JuMP
@@ -262,7 +267,11 @@ function generate_counterfactual(icnn_model::FICNN,
     println("Solving MIP...")
     solve_start = time()
     optimize!(model)
-    solve_time = time() - solve_start
+    solve_time = JuMP.solve_time(model)  # Use Gurobi's internal timer
+    if solve_time === nothing
+        @warn "Gurobi did not report solve time (status: $(termination_status(model))). Using wall-clock time as fallback."
+        solve_time = time() - solve_start
+    end
     println("  MIP solved in $(round(solve_time, digits=3))s")
 
     status = termination_status(model)
@@ -276,8 +285,19 @@ function generate_counterfactual(icnn_model::FICNN,
         changed_indices = findall(abs.(x_cf .- x_factual) .> 1e-5)
         num_changed = length(changed_indices)
         extraction_time = time() - extraction_start
-        
+
         total_time = time() - total_start
+
+        # Validate timing breakdown
+        components_sum = eval_time +
+                         build_time +
+                         solve_time +
+                         extraction_time
+
+        unaccounted = total_time - components_sum
+        if abs(unaccounted) > 0.01  # More than 10ms unaccounted
+            @warn "MILP timing discrepancy: $(round(unaccounted*1000, digits=1))ms unaccounted (may include Julia overhead)"
+        end
 
         println("✓ Found counterfactual!")
         println("  Distance: $(round(distance, digits=4))")
@@ -288,6 +308,9 @@ function generate_counterfactual(icnn_model::FICNN,
         println("    - Model build: $(round(build_time, digits=3))s")
         println("    - MIP solve: $(round(solve_time, digits=3))s")
         println("    - Extraction: $(round(extraction_time, digits=3))s")
+        if abs(unaccounted) > 0.01
+            println("    - Unaccounted: $(round(unaccounted, digits=3))s (Julia/JuMP overhead)")
+        end
 
         if num_changed > 0 && num_changed <= 20
             println("\n  Changed features (showing up to 20):")
@@ -295,6 +318,17 @@ function generate_counterfactual(icnn_model::FICNN,
                 @printf("    Feature %3d: %.4f → %.4f (Δ = %+.4f)\n",
                        idx, x_factual[idx], x_cf[idx], x_cf[idx] - x_factual[idx])
             end
+        end
+
+        timing_breakdown_dict = Dict(
+            :total => total_time,
+            :initial_eval => eval_time,
+            :model_build => build_time,
+            :mip_solve => solve_time,
+            :result_extraction => extraction_time
+        )
+        if abs(unaccounted) > 0.01
+            timing_breakdown_dict[:unaccounted_overhead] = unaccounted
         end
 
         return Dict(
@@ -306,13 +340,7 @@ function generate_counterfactual(icnn_model::FICNN,
             :solve_time => total_time,
             :status => status,
             :iterations => 1,  # MILP is single-shot
-            :timing_breakdown => Dict(
-                :total => total_time,
-                :initial_eval => eval_time,
-                :model_build => build_time,
-                :mip_solve => solve_time,
-                :result_extraction => extraction_time
-            )
+            :timing_breakdown => timing_breakdown_dict
         )
     else
         total_time = time() - total_start

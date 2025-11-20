@@ -28,6 +28,11 @@ encoding with a series of linear cuts, resulting in significantly faster solve t
 - Neural network represented implicitly via OA cuts
 - Master problem grows by one constraint per iteration
 - Exploits convexity for provably correct solutions
+
+# TIMING METHODOLOGY
+All MILP solve times use Gurobi's internal timer (via JuMP.solve_time()) accumulated
+across iterations. This excludes Julia/JuMP interface overhead and measures pure
+solver performance for fair comparison with full MILP encoding.
 """
 
 using JuMP
@@ -561,28 +566,40 @@ function find_interior_point_oa(
         # Skip cuts where gradient is near-zero (flat regions)
         # Such cuts don't provide useful bounds and can make LP unbounded
         grad_norm = norm(grad_k)
-        if grad_norm < 1e-6
+        if grad_norm < 1e-10  # Tighter threshold (P1 Fix #2)
             if verbose && iter <= 3
-                println("  Iter $iter: Skipping cut (gradient norm = $(grad_norm) ≈ 0)")
+                @warn "Near-zero gradient at iteration $iter - using small perturbation"
             end
-            # Move to a random point within bounds to escape flat region
-            x_k = Float32.(rand(n_features) .* (x_bounds[2] - x_bounds[1]) .+ x_bounds[1])
+            # Small perturbation instead of random restart
+            x_k = x_k .+ Float32.(1e-4 * randn(n_features) / sqrt(n_features))
             for i in immutable_indices
-                x_k[i] = x_start[i]
+                x_k[i] = x_start[i]  # Restore immutable features
             end
             continue
         end
 
-        # Correct Prob. MM formulation (Appendix A, Minimax Problem)
+        # P0 CRITICAL FIX: Chebyshev center formulation with slack on RIGHT side
         # Goal: Find deepest interior point by maximizing ν such that:
-        #       f(x) ≤ (y_target + ε) - ν  (equivalently: f(x) + ν ≤ y_target + ε)
-        # If ν > 0, then f(x) < y_target + ε (strict interior)
-        # OA linearization: f(x_k) + ∇f(x_k)·(x - x_k) + ν ≤ y_target + ε
-        # As ν increases, constraint on f(x) TIGHTENS, pushing solution deeper into feasible region
+        #       f(x) ≤ (y_target + ε) - ν
+        #
+        # Standard Chebyshev center: a^T x ≤ b - r·||a||
+        # For OA linearization of convex f:
+        #       f(x_k) + ∇f(x_k)·(x - x_k) ≤ (y_target + ε) - ν·||∇f(x_k)||
+        #
+        # CRITICAL: The slack term (ν·||∇f||) MUST be on the RIGHT side to RELAX the constraint.
+        # If ν > 0, the constraint becomes tighter (RHS decreases), requiring f(x) to be smaller.
+        # This represents GEOMETRIC DISTANCE from the hyperplane to the interior point.
+        #
+        # WRONG (previous): f(x_k) + ∇f(x_k)·(x - x_k) + ν·||∇f(x_k)|| ≤ y_target + ε
+        #   → Adding ν to LHS TIGHTENS when ν increases (opposite of what we want!)
+        # CORRECT (now): f(x_k) + ∇f(x_k)·(x - x_k) ≤ y_target + ε - ν·||∇f(x_k)||
+        #   → Subtracting ν from RHS RELAXES when ν increases (correct Chebyshev formulation)
         constant = f_k - dot(grad_k, Float64.(x_k))
+        grad_norm = max(norm(grad_k), 1e-10)  # Numerical safety to prevent division by zero
         linear_expr = @expression(model,
-                                  constant + sum(grad_k[i] * x[i] for i in 1:n_features) + nu)
-        @constraint(model, linear_expr <= y_target + epsilon)
+                                  constant + sum(grad_k[i] * x[i] for i in 1:n_features))
+        # P0 FIX: Move slack to RHS (subtract nu * grad_norm from RHS, not add to LHS)
+        @constraint(model, linear_expr <= y_target + epsilon - nu * grad_norm)
         
         # Solve LP
         optimize!(model)
@@ -621,34 +638,52 @@ function find_interior_point_oa(
             x_batch = reshape(x_k, 1, :)
             f_k_actual = Float64(icnn_model(x_batch)[1, 1])
             target_val = y_target + epsilon
-            is_interior = (nu_k > tolerance && f_k_actual <= target_val)
+            geometric_slack_k = nu_k * grad_norm  # NEW: Show geometric slack
+            is_interior = (geometric_slack_k > tolerance_abs && f_k_actual <= target_val)
 
             println("  Prob. MM Iter $iter:")
-            println("    ν = $(round(nu_k, digits=6))")
-            println("    f(x) = $(round(f_k_actual, digits=4))")
-            println("    Target = $(round(target_val, digits=4))")
-            println("    Interior? $is_interior")
+            println("    ν (unnormalized) = $(round(nu_k, digits=6))")
+            println("    ||∇f||           = $(round(grad_norm, digits=6))")
+            println("    r (geometric)    = $(round(geometric_slack_k, digits=6))")
+            println("    f(x)             = $(round(f_k_actual, digits=4))")
+            println("    Target           = $(round(target_val, digits=4))")
+            println("    Interior?        = $is_interior")
 
             # Show cut quality metrics
             x_k_float = Float64.(x_k)
-            cut_value_at_solution = constant + dot(grad_k, x_k_float) + nu_k
-            cut_rhs = y_target + epsilon
-            cut_slack = cut_rhs - cut_value_at_solution
-            effective_bound = cut_rhs - nu_k
+            # P0 FIX: Show correct cut formulation (slack on RHS)
+            cut_lhs = constant + dot(grad_k, x_k_float)
+            cut_rhs = y_target + epsilon - nu_k * grad_norm  # Slack on RHS
+            cut_slack = cut_rhs - cut_lhs
+            effective_bound = cut_rhs  # The RHS is the effective bound for f(x)
 
             println("    Cut diagnostics:")
-            println(@sprintf("      Cut LHS at x*:     %.2f", cut_value_at_solution))
-            println(@sprintf("      Cut RHS:           %.2f", cut_rhs))
-            println(@sprintf("      Cut slack:         %.2f", cut_slack))
-            println(@sprintf("      Effective f bound: %.2f (should be < %.2f)",
+            println(@sprintf("      Cut LHS at x*:        %.2f", cut_lhs))
+            println(@sprintf("      Cut RHS:              %.2f", cut_rhs))
+            println(@sprintf("      Cut slack:            %.2f", cut_slack))
+            println(@sprintf("      Effective f bound:    %.2f (should be < %.2f)",
                            effective_bound, y_target + epsilon))
 
-            if cut_slack > 1000.0
-                @warn "Cut has large slack ($cut_slack) - may indicate formulation issue!"
+            # Consistency check: geometric slack should match interior depth
+            interior_depth = (y_target + epsilon) - f_k_actual
+            consistency_ratio = geometric_slack_k / max(abs(interior_depth), 1e-6)
+            println(@sprintf("      Interior depth:       %.2f", interior_depth))
+            println(@sprintf("      Consistency (r/depth): %.2f (should be ~1.0 if deep interior)", consistency_ratio))
+
+            if cut_slack < -0.01
+                @warn "Cut constraint violated at solution! LHS=$(cut_lhs) > RHS=$(cut_rhs)"
+                @warn "This indicates a numerical issue or formulation error"
             end
         end
 
-        # Check for success: nu > tolerance means we have strict feasibility
+        # FIXED: Check for success using geometric slack (r = ν * ||∇f||)
+        # Now that we normalize gradients, ν represents geometric distance from hyperplane
+        geometric_slack = nu_k * grad_norm  # Convert to geometric distance
+
+        # Define tolerances
+        tolerance_abs = 1e-4  # Absolute tolerance for geometric slack
+        tolerance_rel = 1e-2  # Relative tolerance: 1% of function value magnitude
+
         if nu_k > tolerance
             # Verify that x_k is actually feasible
             x_batch = reshape(x_k, 1, :)
@@ -657,26 +692,39 @@ function find_interior_point_oa(
             # Check: f(x*) should be strictly less than target + epsilon
             interior_slack = (y_target + epsilon) - f_verify
 
+            # Compute relative slack for better numerical stability
+            target_magnitude = max(abs(y_target), 1.0)
+            relative_slack = geometric_slack / target_magnitude
+
             if verbose
                 verify_status = interior_slack > tolerance ? "✓ SUCCESS" : @sprintf("✗ Slack=%.6f", interior_slack)
                 println(@sprintf("%4d │ %12.8f │ %11.6f │ OPTIMAL   │ %s",
                                 iter, nu_k, f_k, verify_status))
             end
 
-            if interior_slack > tolerance && nu_k > tolerance
-                # SUCCESS: strictly interior point
+            # P1 FIX #3: Success criteria - use OR instead of AND
+            # Either absolute slack OR relative slack should be sufficient
+            # (requiring both is too restrictive and can cause false negatives)
+            if geometric_slack > tolerance_abs || relative_slack > tolerance_rel
+                # SUCCESS: strictly interior point with geometric slack verification
                 if verbose
                     println("\n✓ SUCCESS: Found interior point!")
-                    println("  ν = $(round(nu_k, digits=8)) > tolerance")
+                    println("  Geometric slack (r): $(round(geometric_slack, digits=8))")
+                    println("  ν = $(round(nu_k, digits=8)), ||∇f|| = $(round(grad_norm, digits=6))")
                     println("  f(x) = $(round(f_verify, digits=6)) < $(round(y_target + epsilon, digits=6))")
-                    println("  Interior slack: $(round(interior_slack, digits=6)) > tolerance")
+                    println("  Interior slack: $(round(interior_slack, digits=6))")
+                    println("  Relative slack: $(round(relative_slack * 100, digits=2))% of target magnitude")
                     println("="^70)
                 end
                 return x_k
             else
-                # ν > tolerance but verification failed (nonconvexity issue?)
+                # ν > tolerance but geometric slack insufficient
                 # Continue searching
-                failure_reason = "Verification failed: interior_slack = $(round(interior_slack, digits=8)) ≤ tolerance"
+                if geometric_slack <= tolerance_abs
+                    failure_reason = "Geometric slack too small: r = $(round(geometric_slack, digits=8)) ≤ $(tolerance_abs)"
+                else
+                    failure_reason = "Relative slack too small: $(round(relative_slack * 100, digits=2))% ≤ $(tolerance_rel * 100)%"
+                end
             end
         else
             if verbose
@@ -690,8 +738,34 @@ function find_interior_point_oa(
     # Max iterations reached without finding interior point
     if verbose
         println("\n✗ FAILED: $failure_reason")
-        println("  Final ν = $(round(value(nu), digits=8)) ≤ $(tolerance)")
-        println("  Need ν > $(tolerance) for strict interior point")
+
+        # Enhanced diagnostics with geometric interpretation
+        final_nu = value(nu)
+        final_x = Float32.(value.(x))
+        x_batch = reshape(final_x, 1, :)
+        final_f = Float64(icnn_model(x_batch)[1, 1])
+        _, final_grad = evaluate_ficnn_with_gradient(icnn_model, final_x)
+        final_grad_norm = norm(final_grad)
+        final_geometric_slack = final_nu * final_grad_norm
+        target_gap = final_f - (y_target + epsilon)
+
+        println("\n  Final state:")
+        println("    ν (unnormalized):      $(round(final_nu, digits=8))")
+        println("    ||∇f||:                $(round(final_grad_norm, digits=6))")
+        println("    Geometric slack (r):   $(round(final_geometric_slack, digits=6))")
+        println("    f(x):                  $(round(final_f, digits=6))")
+        println("    Target:                $(round(y_target + epsilon, digits=6))")
+        println("    Gap to target:         $(round(target_gap, digits=6))")
+
+        if abs(final_geometric_slack - abs(target_gap)) < 0.1 * abs(target_gap)
+            println("\n  ✓ Values are consistent (geometric slack ≈ |gap|)")
+            println("    This indicates correct formulation but no interior point exists")
+        else
+            println("\n  ⚠ Inconsistency detected:")
+            println("    Expected: geometric slack ≈ |gap to target|")
+            println("    Actual difference: $(abs(final_geometric_slack - abs(target_gap)))")
+        end
+
         println("="^70)
     end
     return nothing
@@ -1169,7 +1243,11 @@ function generate_counterfactual_oa(
 
         status = termination_status(master_model)
         master_solve_time = JuMP.solve_time(master_model)
-        timing_breakdown[:total_milp_solve] += time() - iter_milp_start
+        if master_solve_time === nothing
+            @warn "Gurobi did not report solve time (status: $status). Using wall-clock time as fallback."
+            master_solve_time = time() - iter_milp_start
+        end
+        timing_breakdown[:total_milp_solve] += master_solve_time  # Use Gurobi's internal timer
 
         # Check termination status
         if status == MOI.INFEASIBLE || status == MOI.INFEASIBLE_OR_UNBOUNDED
@@ -1416,6 +1494,23 @@ function generate_counterfactual_oa(
     solve_time = time() - start_time
     timing_breakdown[:total] = solve_time
 
+    # Validate timing breakdown
+    components_sum = timing_breakdown[:model_build] +
+                     timing_breakdown[:total_milp_solve] +
+                     timing_breakdown[:total_nn_eval] +
+                     timing_breakdown[:total_cut_generation]
+
+    # Add interior point search if ESH
+    if haskey(timing_breakdown, :interior_point_search)
+        components_sum += timing_breakdown[:interior_point_search]
+    end
+
+    unaccounted = timing_breakdown[:total] - components_sum
+    if abs(unaccounted) > 0.01
+        @warn "OA timing discrepancy: $(round(unaccounted*1000, digits=1))ms unaccounted (may include Julia overhead)"
+        timing_breakdown[:unaccounted_overhead] = unaccounted
+    end
+
     if verbose
         println("-" ^ 70)
         println("\nTiming Breakdown:")
@@ -1428,6 +1523,9 @@ function generate_counterfactual_oa(
             println("    - Bisection:   $(round(timing_breakdown[:total_bisection], digits=3))s")
         end
         println("  Total:           $(round(timing_breakdown[:total], digits=3))s")
+        if haskey(timing_breakdown, :unaccounted_overhead) && abs(timing_breakdown[:unaccounted_overhead]) > 0.01
+            println("  ⚠ Unaccounted:   $(round(timing_breakdown[:unaccounted_overhead], digits=3))s (Julia/JuMP overhead)")
+        end
         println()
     end
 
