@@ -101,4 +101,5 @@ function (model::FICNN)(x)
     return permutedims(z, (2, 1))  # (batch, n_output)
 end
 
-include("../training/trainer.jl")  # Include training-specific functions
+# Note: trainer.jl is included in the main ICNN.jl module
+# No need to include it here to avoid duplicate docstring warnings

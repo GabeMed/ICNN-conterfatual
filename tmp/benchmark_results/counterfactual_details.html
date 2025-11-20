@@ -217,6 +217,122 @@
         .compact-table td {
             padding: 5px 8px;
         }
+        .timing-breakdown {
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+            padding: 10px;
+            margin: 10px 0;
+            font-size: 12px;
+        }
+        .timing-breakdown table {
+            font-size: 12px;
+            margin: 5px 0;
+        }
+        .timing-breakdown th {
+            background-color: #6c757d;
+            font-size: 11px;
+        }
+        .timing-bar {
+            background-color: #007bff;
+            height: 20px;
+            border-radius: 3px;
+            position: relative;
+            margin: 2px 0;
+        }
+        .timing-bar-label {
+            position: absolute;
+            left: 5px;
+            color: white;
+            font-size: 11px;
+            line-height: 20px;
+            font-weight: bold;
+        }
+        .iterations-badge {
+            background-color: #17a2b8;
+            color: white;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: bold;
+            margin-left: 5px;
+        }
+        .comparison-table {
+            width: 100%;
+            margin: 25px 0;
+            border-collapse: collapse;
+            font-size: 13px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .comparison-table th {
+            background-color: #2c3e50;
+            color: white;
+            padding: 12px 8px;
+            text-align: center;
+            font-size: 12px;
+        }
+        .comparison-table td {
+            padding: 10px 8px;
+            text-align: center;
+            border: 1px solid #dee2e6;
+        }
+        .comparison-table tr:nth-child(even) {
+            background-color: #f8f9fa;
+        }
+        .best-value {
+            background-color: #d4edda;
+            font-weight: bold;
+            color: #155724;
+        }
+        .worst-value {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+        .timing-visual {
+            margin: 15px 0;
+            padding: 15px;
+            background-color: #f8f9fa;
+            border-radius: 5px;
+            border-left: 4px solid #3498db;
+        }
+        .timing-row {
+            display: flex;
+            align-items: center;
+            margin: 8px 0;
+            font-size: 13px;
+        }
+        .timing-label {
+            min-width: 140px;
+            font-weight: 500;
+            color: #495057;
+        }
+        .timing-bar-container {
+            flex: 1;
+            height: 22px;
+            background-color: #e9ecef;
+            border-radius: 3px;
+            position: relative;
+            margin: 0 10px;
+            overflow: hidden;
+        }
+        .timing-bar-fill {
+            height: 100%;
+            border-radius: 3px;
+            display: flex;
+            align-items: center;
+            padding-left: 5px;
+            color: white;
+            font-weight: bold;
+            font-size: 10px;
+            transition: width 0.3s ease;
+        }
+        .timing-value {
+            min-width: 70px;
+            text-align: right;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            font-weight: 600;
+        }
     </style>
 </head>
 <body>
@@ -230,9 +346,57 @@
                 <li>Counterfactual Cost: Cost achieved by each method</li>
                 <li>Changed Features: Which features were modified and their values</li>
                 <li>Feature Changes: Original value → New value (Δ change)</li>
+                <li><strong>Timing Breakdown:</strong> Detailed time spent in each phase</li>
+                <li><strong>Iterations:</strong> Number of optimization iterations</li>
             </ul>
         </div>
 
+        <h2>📊 Performance Comparison Summary</h2>
+        <p class="note">Average performance across all test cases</p>
+        <table class="comparison-table">
+            <thead>
+                <tr>
+                    <th>Method</th>
+                    <th>Success Rate</th>
+                    <th>Avg Time (s)</th>
+                    <th>Avg Iterations</th>
+                    <th>Avg Features Changed</th>
+                    <th>Cases (Success/Total)</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>ECP</strong></td>
+                    <td class="">86.7%</td>
+                    <td class="">1.965</td>
+                    <td class="">18.5</td>
+                    <td class="best-value">11.8</td>
+                    <td>13 / 15</td>
+                </tr>
+                <tr>
+                    <td><strong>ESH</strong></td>
+                    <td class="">86.7%</td>
+                    <td class="">1.743</td>
+                    <td class="">19.0</td>
+                    <td class="best-value">11.8</td>
+                    <td>13 / 15</td>
+                </tr>
+                <tr>
+                    <td><strong>MILP</strong></td>
+                    <td class="best-value">100.0%</td>
+                    <td class="best-value">1.306</td>
+                    <td class="best-value">1.0</td>
+                    <td class="">13.5</td>
+                    <td>15 / 15</td>
+                </tr>
+            </tbody>
+        </table>
+        
+        <div class="warning-box">
+            <strong>⚠️ Important:</strong> Green cells indicate best performance for that metric.
+            Lower is better for: Time, Iterations, Features Changed.
+            Higher is better for: Success Rate.
+        </div>
         <h2>Overview: Results by Reduction Target</h2>
         <p class="note">Click on each reduction to expand/collapse details</p>
         <details open>
@@ -254,8 +418,12 @@
                                     <span class="metric-value">5</span>
                                 </div>
                                 <div class="metric">
+                                    <span class="metric-label">Iters</span>
+                                    <span class="metric-value">8</span>
+                                </div>
+                                <div class="metric">
                                     <span class="metric-label">Time</span>
-                                    <span class="metric-value">4.648s</span>
+                                    <span class="metric-value">5.090s</span>
                                 </div>
                             </div>
                         </div>
@@ -271,8 +439,12 @@
                                     <span class="metric-value">5</span>
                                 </div>
                                 <div class="metric">
+                                    <span class="metric-label">Iters</span>
+                                    <span class="metric-value">10</span>
+                                </div>
+                                <div class="metric">
                                     <span class="metric-label">Time</span>
-                                    <span class="metric-value">0.739s</span>
+                                    <span class="metric-value">0.811s</span>
                                 </div>
                             </div>
                         </div>
@@ -288,8 +460,12 @@
                                     <span class="metric-value">5</span>
                                 </div>
                                 <div class="metric">
+                                    <span class="metric-label">Iters</span>
+                                    <span class="metric-value">1</span>
+                                </div>
+                                <div class="metric">
                                     <span class="metric-label">Time</span>
-                                    <span class="metric-value">0.777s</span>
+                                    <span class="metric-value">1.466s</span>
                                 </div>
                             </div>
                         </div>
@@ -309,8 +485,12 @@
                                     <span class="metric-value">5</span>
                                 </div>
                                 <div class="metric">
+                                    <span class="metric-label">Iters</span>
+                                    <span class="metric-value">10</span>
+                                </div>
+                                <div class="metric">
                                     <span class="metric-label">Time</span>
-                                    <span class="metric-value">0.547s</span>
+                                    <span class="metric-value">0.573s</span>
                                 </div>
                             </div>
                         </div>
@@ -326,8 +506,12 @@
                                     <span class="metric-value">5</span>
                                 </div>
                                 <div class="metric">
+                                    <span class="metric-label">Iters</span>
+                                    <span class="metric-value">7</span>
+                                </div>
+                                <div class="metric">
                                     <span class="metric-label">Time</span>
-                                    <span class="metric-value">0.412s</span>
+                                    <span class="metric-value">0.418s</span>
                                 </div>
                             </div>
                         </div>
@@ -343,8 +527,12 @@
                                     <span class="metric-value">5</span>
                                 </div>
                                 <div class="metric">
+                                    <span class="metric-label">Iters</span>
+                                    <span class="metric-value">1</span>
+                                </div>
+                                <div class="metric">
                                     <span class="metric-label">Time</span>
-                                    <span class="metric-value">0.800s</span>
+                                    <span class="metric-value">1.006s</span>
                                 </div>
                             </div>
                         </div>
@@ -364,8 +552,12 @@
                                     <span class="metric-value">4</span>
                                 </div>
                                 <div class="metric">
+                                    <span class="metric-label">Iters</span>
+                                    <span class="metric-value">5</span>
+                                </div>
+                                <div class="metric">
                                     <span class="metric-label">Time</span>
-                                    <span class="metric-value">0.286s</span>
+                                    <span class="metric-value">0.307s</span>
                                 </div>
                             </div>
                         </div>
@@ -381,8 +573,12 @@
                                     <span class="metric-value">4</span>
                                 </div>
                                 <div class="metric">
+                                    <span class="metric-label">Iters</span>
+                                    <span class="metric-value">5</span>
+                                </div>
+                                <div class="metric">
                                     <span class="metric-label">Time</span>
-                                    <span class="metric-value">0.297s</span>
+                                    <span class="metric-value">0.296s</span>
                                 </div>
                             </div>
                         </div>
@@ -398,8 +594,12 @@
                                     <span class="metric-value">4</span>
                                 </div>
                                 <div class="metric">
+                                    <span class="metric-label">Iters</span>
+                                    <span class="metric-value">1</span>
+                                </div>
+                                <div class="metric">
                                     <span class="metric-label">Time</span>
-                                    <span class="metric-value">0.840s</span>
+                                    <span class="metric-value">0.979s</span>
                                 </div>
                             </div>
                         </div>
@@ -426,8 +626,12 @@
                                     <span class="metric-value">9</span>
                                 </div>
                                 <div class="metric">
+                                    <span class="metric-label">Iters</span>
+                                    <span class="metric-value">11</span>
+                                </div>
+                                <div class="metric">
                                     <span class="metric-label">Time</span>
-                                    <span class="metric-value">0.603s</span>
+                                    <span class="metric-value">0.600s</span>
                                 </div>
                             </div>
                         </div>
@@ -443,8 +647,12 @@
                                     <span class="metric-value">9</span>
                                 </div>
                                 <div class="metric">
+                                    <span class="metric-label">Iters</span>
+                                    <span class="metric-value">12</span>
+                                </div>
+                                <div class="metric">
                                     <span class="metric-label">Time</span>
-                                    <span class="metric-value">0.721s</span>
+                                    <span class="metric-value">0.754s</span>
                                 </div>
                             </div>
                         </div>
@@ -460,8 +668,12 @@
                                     <span class="metric-value">9</span>
                                 </div>
                                 <div class="metric">
+                                    <span class="metric-label">Iters</span>
+                                    <span class="metric-value">1</span>
+                                </div>
+                                <div class="metric">
                                     <span class="metric-label">Time</span>
-                                    <span class="metric-value">1.500s</span>
+                                    <span class="metric-value">1.605s</span>
                                 </div>
                             </div>
                         </div>
@@ -481,8 +693,12 @@
                                     <span class="metric-value">8</span>
                                 </div>
                                 <div class="metric">
+                                    <span class="metric-label">Iters</span>
+                                    <span class="metric-value">6</span>
+                                </div>
+                                <div class="metric">
                                     <span class="metric-label">Time</span>
-                                    <span class="metric-value">0.287s</span>
+                                    <span class="metric-value">0.280s</span>
                                 </div>
                             </div>
                         </div>
@@ -498,8 +714,12 @@
                                     <span class="metric-value">8</span>
                                 </div>
                                 <div class="metric">
+                                    <span class="metric-label">Iters</span>
+                                    <span class="metric-value">7</span>
+                                </div>
+                                <div class="metric">
                                     <span class="metric-label">Time</span>
-                                    <span class="metric-value">0.362s</span>
+                                    <span class="metric-value">0.367s</span>
                                 </div>
                             </div>
                         </div>
@@ -515,8 +735,12 @@
                                     <span class="metric-value">8</span>
                                 </div>
                                 <div class="metric">
+                                    <span class="metric-label">Iters</span>
+                                    <span class="metric-value">1</span>
+                                </div>
+                                <div class="metric">
                                     <span class="metric-label">Time</span>
-                                    <span class="metric-value">0.913s</span>
+                                    <span class="metric-value">1.403s</span>
                                 </div>
                             </div>
                         </div>
@@ -536,8 +760,12 @@
                                     <span class="metric-value">8</span>
                                 </div>
                                 <div class="metric">
+                                    <span class="metric-label">Iters</span>
+                                    <span class="metric-value">31</span>
+                                </div>
+                                <div class="metric">
                                     <span class="metric-label">Time</span>
-                                    <span class="metric-value">3.756s</span>
+                                    <span class="metric-value">3.651s</span>
                                 </div>
                             </div>
                         </div>
@@ -553,8 +781,12 @@
                                     <span class="metric-value">8</span>
                                 </div>
                                 <div class="metric">
+                                    <span class="metric-label">Iters</span>
+                                    <span class="metric-value">33</span>
+                                </div>
+                                <div class="metric">
                                     <span class="metric-label">Time</span>
-                                    <span class="metric-value">4.546s</span>
+                                    <span class="metric-value">4.180s</span>
                                 </div>
                             </div>
                         </div>
@@ -570,8 +802,12 @@
                                     <span class="metric-value">8</span>
                                 </div>
                                 <div class="metric">
+                                    <span class="metric-label">Iters</span>
+                                    <span class="metric-value">1</span>
+                                </div>
+                                <div class="metric">
                                     <span class="metric-label">Time</span>
-                                    <span class="metric-value">1.044s</span>
+                                    <span class="metric-value">1.232s</span>
                                 </div>
                             </div>
                         </div>
@@ -598,8 +834,12 @@
                                     <span class="metric-value">13</span>
                                 </div>
                                 <div class="metric">
+                                    <span class="metric-label">Iters</span>
+                                    <span class="metric-value">30</span>
+                                </div>
+                                <div class="metric">
                                     <span class="metric-label">Time</span>
-                                    <span class="metric-value">2.695s</span>
+                                    <span class="metric-value">2.745s</span>
                                 </div>
                             </div>
                         </div>
@@ -615,8 +855,12 @@
                                     <span class="metric-value">13</span>
                                 </div>
                                 <div class="metric">
+                                    <span class="metric-label">Iters</span>
+                                    <span class="metric-value">38</span>
+                                </div>
+                                <div class="metric">
                                     <span class="metric-label">Time</span>
-                                    <span class="metric-value">4.271s</span>
+                                    <span class="metric-value">4.207s</span>
                                 </div>
                             </div>
                         </div>
@@ -632,8 +876,12 @@
                                     <span class="metric-value">13</span>
                                 </div>
                                 <div class="metric">
+                                    <span class="metric-label">Iters</span>
+                                    <span class="metric-value">1</span>
+                                </div>
+                                <div class="metric">
                                     <span class="metric-label">Time</span>
-                                    <span class="metric-value">0.981s</span>
+                                    <span class="metric-value">1.129s</span>
                                 </div>
                             </div>
                         </div>
@@ -653,8 +901,12 @@
                                     <span class="metric-value">13</span>
                                 </div>
                                 <div class="metric">
+                                    <span class="metric-label">Iters</span>
+                                    <span class="metric-value">23</span>
+                                </div>
+                                <div class="metric">
                                     <span class="metric-label">Time</span>
-                                    <span class="metric-value">2.160s</span>
+                                    <span class="metric-value">2.165s</span>
                                 </div>
                             </div>
                         </div>
@@ -670,8 +922,12 @@
                                     <span class="metric-value">13</span>
                                 </div>
                                 <div class="metric">
+                                    <span class="metric-label">Iters</span>
+                                    <span class="metric-value">22</span>
+                                </div>
+                                <div class="metric">
                                     <span class="metric-label">Time</span>
-                                    <span class="metric-value">1.934s</span>
+                                    <span class="metric-value">2.028s</span>
                                 </div>
                             </div>
                         </div>
@@ -687,8 +943,12 @@
                                     <span class="metric-value">13</span>
                                 </div>
                                 <div class="metric">
+                                    <span class="metric-label">Iters</span>
+                                    <span class="metric-value">1</span>
+                                </div>
+                                <div class="metric">
                                     <span class="metric-label">Time</span>
-                                    <span class="metric-value">1.048s</span>
+                                    <span class="metric-value">1.265s</span>
                                 </div>
                             </div>
                         </div>
@@ -708,8 +968,12 @@
                                     <span class="metric-value">13</span>
                                 </div>
                                 <div class="metric">
+                                    <span class="metric-label">Iters</span>
+                                    <span class="metric-value">36</span>
+                                </div>
+                                <div class="metric">
                                     <span class="metric-label">Time</span>
-                                    <span class="metric-value">4.403s</span>
+                                    <span class="metric-value">3.897s</span>
                                 </div>
                             </div>
                         </div>
@@ -725,8 +989,12 @@
                                     <span class="metric-value">13</span>
                                 </div>
                                 <div class="metric">
+                                    <span class="metric-label">Iters</span>
+                                    <span class="metric-value">33</span>
+                                </div>
+                                <div class="metric">
                                     <span class="metric-label">Time</span>
-                                    <span class="metric-value">3.368s</span>
+                                    <span class="metric-value">3.075s</span>
                                 </div>
                             </div>
                         </div>
@@ -742,8 +1010,12 @@
                                     <span class="metric-value">13</span>
                                 </div>
                                 <div class="metric">
+                                    <span class="metric-label">Iters</span>
+                                    <span class="metric-value">1</span>
+                                </div>
+                                <div class="metric">
                                     <span class="metric-label">Time</span>
-                                    <span class="metric-value">1.016s</span>
+                                    <span class="metric-value">1.114s</span>
                                 </div>
                             </div>
                         </div>
@@ -770,8 +1042,12 @@
                                     <span class="metric-value">17</span>
                                 </div>
                                 <div class="metric">
+                                    <span class="metric-label">Iters</span>
+                                    <span class="metric-value">9</span>
+                                </div>
+                                <div class="metric">
                                     <span class="metric-label">Time</span>
-                                    <span class="metric-value">0.461s</span>
+                                    <span class="metric-value">0.448s</span>
                                 </div>
                             </div>
                         </div>
@@ -787,8 +1063,12 @@
                                     <span class="metric-value">17</span>
                                 </div>
                                 <div class="metric">
+                                    <span class="metric-label">Iters</span>
+                                    <span class="metric-value">11</span>
+                                </div>
+                                <div class="metric">
                                     <span class="metric-label">Time</span>
-                                    <span class="metric-value">0.651s</span>
+                                    <span class="metric-value">0.611s</span>
                                 </div>
                             </div>
                         </div>
@@ -804,8 +1084,12 @@
                                     <span class="metric-value">17</span>
                                 </div>
                                 <div class="metric">
+                                    <span class="metric-label">Iters</span>
+                                    <span class="metric-value">1</span>
+                                </div>
+                                <div class="metric">
                                     <span class="metric-label">Time</span>
-                                    <span class="metric-value">1.270s</span>
+                                    <span class="metric-value">1.335s</span>
                                 </div>
                             </div>
                         </div>
@@ -825,8 +1109,12 @@
                                     <span class="metric-value">18</span>
                                 </div>
                                 <div class="metric">
+                                    <span class="metric-label">Iters</span>
+                                    <span class="metric-value">20</span>
+                                </div>
+                                <div class="metric">
                                     <span class="metric-label">Time</span>
-                                    <span class="metric-value">1.775s</span>
+                                    <span class="metric-value">1.580s</span>
                                 </div>
                             </div>
                         </div>
@@ -842,8 +1130,12 @@
                                     <span class="metric-value">18</span>
                                 </div>
                                 <div class="metric">
+                                    <span class="metric-label">Iters</span>
+                                    <span class="metric-value">17</span>
+                                </div>
+                                <div class="metric">
                                     <span class="metric-label">Time</span>
-                                    <span class="metric-value">1.399s</span>
+                                    <span class="metric-value">1.186s</span>
                                 </div>
                             </div>
                         </div>
@@ -859,8 +1151,12 @@
                                     <span class="metric-value">18</span>
                                 </div>
                                 <div class="metric">
+                                    <span class="metric-label">Iters</span>
+                                    <span class="metric-value">1</span>
+                                </div>
+                                <div class="metric">
                                     <span class="metric-label">Time</span>
-                                    <span class="metric-value">1.588s</span>
+                                    <span class="metric-value">1.449s</span>
                                 </div>
                             </div>
                         </div>
@@ -880,8 +1176,12 @@
                                     <span class="metric-value">17</span>
                                 </div>
                                 <div class="metric">
+                                    <span class="metric-label">Iters</span>
+                                    <span class="metric-value">12</span>
+                                </div>
+                                <div class="metric">
                                     <span class="metric-label">Time</span>
-                                    <span class="metric-value">0.544s</span>
+                                    <span class="metric-value">0.538s</span>
                                 </div>
                             </div>
                         </div>
@@ -897,8 +1197,12 @@
                                     <span class="metric-value">17</span>
                                 </div>
                                 <div class="metric">
+                                    <span class="metric-label">Iters</span>
+                                    <span class="metric-value">12</span>
+                                </div>
+                                <div class="metric">
                                     <span class="metric-label">Time</span>
-                                    <span class="metric-value">0.692s</span>
+                                    <span class="metric-value">0.752s</span>
                                 </div>
                             </div>
                         </div>
@@ -914,8 +1218,12 @@
                                     <span class="metric-value">17</span>
                                 </div>
                                 <div class="metric">
+                                    <span class="metric-label">Iters</span>
+                                    <span class="metric-value">1</span>
+                                </div>
+                                <div class="metric">
                                     <span class="metric-label">Time</span>
-                                    <span class="metric-value">1.171s</span>
+                                    <span class="metric-value">1.071s</span>
                                 </div>
                             </div>
                         </div>
@@ -942,8 +1250,12 @@
                                     <span class="metric-value">24</span>
                                 </div>
                                 <div class="metric">
+                                    <span class="metric-label">Iters</span>
+                                    <span class="metric-value">40</span>
+                                </div>
+                                <div class="metric">
                                     <span class="metric-label">Time</span>
-                                    <span class="metric-value">3.784s</span>
+                                    <span class="metric-value">3.672s</span>
                                 </div>
                             </div>
                         </div>
@@ -959,8 +1271,12 @@
                                     <span class="metric-value">24</span>
                                 </div>
                                 <div class="metric">
+                                    <span class="metric-label">Iters</span>
+                                    <span class="metric-value">40</span>
+                                </div>
+                                <div class="metric">
                                     <span class="metric-label">Time</span>
-                                    <span class="metric-value">4.188s</span>
+                                    <span class="metric-value">3.972s</span>
                                 </div>
                             </div>
                         </div>
@@ -976,8 +1292,12 @@
                                     <span class="metric-value">24</span>
                                 </div>
                                 <div class="metric">
+                                    <span class="metric-label">Iters</span>
+                                    <span class="metric-value">1</span>
+                                </div>
+                                <div class="metric">
                                     <span class="metric-label">Time</span>
-                                    <span class="metric-value">1.037s</span>
+                                    <span class="metric-value">1.093s</span>
                                 </div>
                             </div>
                         </div>
@@ -1009,8 +1329,12 @@
                                     <span class="metric-value">25</span>
                                 </div>
                                 <div class="metric">
+                                    <span class="metric-label">Iters</span>
+                                    <span class="metric-value">1</span>
+                                </div>
+                                <div class="metric">
                                     <span class="metric-label">Time</span>
-                                    <span class="metric-value">1.529s</span>
+                                    <span class="metric-value">1.579s</span>
                                 </div>
                             </div>
                         </div>
@@ -1042,8 +1366,12 @@
                                     <span class="metric-value">23</span>
                                 </div>
                                 <div class="metric">
+                                    <span class="metric-label">Iters</span>
+                                    <span class="metric-value">1</span>
+                                </div>
+                                <div class="metric">
                                     <span class="metric-label">Time</span>
-                                    <span class="metric-value">1.350s</span>
+                                    <span class="metric-value">1.870s</span>
                                 </div>
                             </div>
                         </div>
@@ -1076,7 +1404,59 @@
                 <p><strong>Counterfactual Cost:</strong> 79899 
                    (deviation: +159.5)</p>
                 <p><strong>Features Changed:</strong> 5 / 236</p>
-                <p><strong>Solve Time:</strong> 4.648s</p>
+                <p><strong>Iterations:</strong> <span class="iterations-badge">8 iterations</span></p>
+                <p><strong>Total Solve Time:</strong> <span style="font-family: 'Courier New', monospace; font-size: 15px; font-weight: bold; color: #2c3e50;">5.09s</span></p>
+                <div class="timing-visual">
+                    <strong style="font-size: 15px;">⏱ Timing Breakdown</strong>
+                    <div class="timing-row">
+                        <div class="timing-label">Model Build</div>
+                        <div class="timing-bar-container">
+                            <div class="timing-bar-fill" style="width: 100.0%; background-color: #3498db;">
+                                71.7%
+                            </div>
+                        </div>
+                        <div class="timing-value">3.649s</div>
+                    </div>
+                    <div class="timing-row">
+                        <div class="timing-label">Interior Search</div>
+                        <div class="timing-bar-container">
+                            <div class="timing-bar-fill" style="width: 0.0%; background-color: #9b59b6;">
+                                0.0%
+                            </div>
+                        </div>
+                        <div class="timing-value">0.0s</div>
+                    </div>
+                    <div class="timing-row">
+                        <div class="timing-label">MILP Solving</div>
+                        <div class="timing-bar-container">
+                            <div class="timing-bar-fill" style="width: 26.341975883925734%; background-color: #e74c3c;">
+                                18.9%
+                            </div>
+                        </div>
+                        <div class="timing-value">0.961s</div>
+                    </div>
+                    <div class="timing-row">
+                        <div class="timing-label">NN Evaluations</div>
+                        <div class="timing-bar-container">
+                            <div class="timing-bar-fill" style="width: 0.1925344291537797%; background-color: #f39c12;">
+                                0.1%
+                            </div>
+                        </div>
+                        <div class="timing-value">0.007s</div>
+                    </div>
+                    <div class="timing-row">
+                        <div class="timing-label">Cut Generation</div>
+                        <div class="timing-bar-container">
+                            <div class="timing-bar-fill" style="width: 0.01787857039657688%; background-color: #2ecc71;">
+                                0.0%
+                            </div>
+                        </div>
+                        <div class="timing-value">0.001s</div>
+                    </div>
+                    <div style="margin-top: 10px; padding-top: 10px; border-top: 2px solid #dee2e6;">
+                        <strong>Total:</strong> 5.09s
+                    </div>
+                </div>
                 <table class="features-table">
                     <thead>
                         <tr>
@@ -1132,7 +1512,68 @@
                 <p><strong>Counterfactual Cost:</strong> 79899 
                    (deviation: +159.5)</p>
                 <p><strong>Features Changed:</strong> 5 / 236</p>
-                <p><strong>Solve Time:</strong> 0.739s</p>
+                <p><strong>Iterations:</strong> <span class="iterations-badge">10 iterations</span></p>
+                <p><strong>Total Solve Time:</strong> <span style="font-family: 'Courier New', monospace; font-size: 15px; font-weight: bold; color: #2c3e50;">0.811s</span></p>
+                <div class="timing-visual">
+                    <strong style="font-size: 15px;">⏱ Timing Breakdown</strong>
+                    <div class="timing-row">
+                        <div class="timing-label">Model Build</div>
+                        <div class="timing-bar-container">
+                            <div class="timing-bar-fill" style="width: 10.113419184361597%; background-color: #3498db;">
+                                6.7%
+                            </div>
+                        </div>
+                        <div class="timing-value">0.054s</div>
+                    </div>
+                    <div class="timing-row">
+                        <div class="timing-label">Interior Search</div>
+                        <div class="timing-bar-container">
+                            <div class="timing-bar-fill" style="width: 29.978894806567013%; background-color: #9b59b6;">
+                                19.7%
+                            </div>
+                        </div>
+                        <div class="timing-value">0.16s</div>
+                    </div>
+                    <div class="timing-row">
+                        <div class="timing-label">MILP Solving</div>
+                        <div class="timing-bar-container">
+                            <div class="timing-bar-fill" style="width: 100.0%; background-color: #e74c3c;">
+                                65.8%
+                            </div>
+                        </div>
+                        <div class="timing-value">0.533s</div>
+                    </div>
+                    <div class="timing-row">
+                        <div class="timing-label">NN Evaluations</div>
+                        <div class="timing-bar-container">
+                            <div class="timing-bar-fill" style="width: 1.5521390350430238%; background-color: #f39c12;">
+                                1.0%
+                            </div>
+                        </div>
+                        <div class="timing-value">0.008s</div>
+                    </div>
+                    <div class="timing-row">
+                        <div class="timing-label">Cut Generation</div>
+                        <div class="timing-bar-container">
+                            <div class="timing-bar-fill" style="width: 8.641866053087472%; background-color: #2ecc71;">
+                                5.7%
+                            </div>
+                        </div>
+                        <div class="timing-value">0.046s</div>
+                    </div>
+                    <div class="timing-row">
+                        <div class="timing-label">  └─ Bisection</div>
+                        <div class="timing-bar-container">
+                            <div class="timing-bar-fill" style="width: 7.512501318515897%; background-color: #16a085;">
+                                4.9%
+                            </div>
+                        </div>
+                        <div class="timing-value">0.04s</div>
+                    </div>
+                    <div style="margin-top: 10px; padding-top: 10px; border-top: 2px solid #dee2e6;">
+                        <strong>Total:</strong> 0.811s
+                    </div>
+                </div>
                 <table class="features-table">
                     <thead>
                         <tr>
@@ -1188,7 +1629,41 @@
                 <p><strong>Counterfactual Cost:</strong> 79899 
                    (deviation: +159.5)</p>
                 <p><strong>Features Changed:</strong> 5 / 236</p>
-                <p><strong>Solve Time:</strong> 0.777s</p>
+                <p><strong>Iterations:</strong> <span class="iterations-badge">1 iterations</span></p>
+                <p><strong>Total Solve Time:</strong> <span style="font-family: 'Courier New', monospace; font-size: 15px; font-weight: bold; color: #2c3e50;">1.466s</span></p>
+                <div class="timing-visual">
+                    <strong style="font-size: 15px;">⏱ Timing Breakdown</strong>
+                    <div class="timing-row">
+                        <div class="timing-label">Model Build</div>
+                        <div class="timing-bar-container">
+                            <div class="timing-bar-fill" style="width: 63.20293031736175%; background-color: #3498db;">
+                                38.4%
+                            </div>
+                        </div>
+                        <div class="timing-value">0.562s</div>
+                    </div>
+                    <div class="timing-row">
+                        <div class="timing-label">MIP Solve</div>
+                        <div class="timing-bar-container">
+                            <div class="timing-bar-fill" style="width: 100.0%; background-color: #e74c3c;">
+                                60.7%
+                            </div>
+                        </div>
+                        <div class="timing-value">0.89s</div>
+                    </div>
+                    <div class="timing-row">
+                        <div class="timing-label">Result Extraction</div>
+                        <div class="timing-bar-container">
+                            <div class="timing-bar-fill" style="width: 0.45091696987653895%; background-color: #2ecc71;">
+                                0.3%
+                            </div>
+                        </div>
+                        <div class="timing-value">0.004s</div>
+                    </div>
+                    <div style="margin-top: 10px; padding-top: 10px; border-top: 2px solid #dee2e6;">
+                        <strong>Total:</strong> 1.466s
+                    </div>
+                </div>
                 <table class="features-table">
                     <thead>
                         <tr>
@@ -1262,7 +1737,59 @@
                 <p><strong>Counterfactual Cost:</strong> 76505 
                    (deviation: +152.7)</p>
                 <p><strong>Features Changed:</strong> 5 / 236</p>
-                <p><strong>Solve Time:</strong> 0.547s</p>
+                <p><strong>Iterations:</strong> <span class="iterations-badge">10 iterations</span></p>
+                <p><strong>Total Solve Time:</strong> <span style="font-family: 'Courier New', monospace; font-size: 15px; font-weight: bold; color: #2c3e50;">0.573s</span></p>
+                <div class="timing-visual">
+                    <strong style="font-size: 15px;">⏱ Timing Breakdown</strong>
+                    <div class="timing-row">
+                        <div class="timing-label">Model Build</div>
+                        <div class="timing-bar-container">
+                            <div class="timing-bar-fill" style="width: 0.5645936569909892%; background-color: #3498db;">
+                                0.5%
+                            </div>
+                        </div>
+                        <div class="timing-value">0.003s</div>
+                    </div>
+                    <div class="timing-row">
+                        <div class="timing-label">Interior Search</div>
+                        <div class="timing-bar-container">
+                            <div class="timing-bar-fill" style="width: 0.0%; background-color: #9b59b6;">
+                                0.0%
+                            </div>
+                        </div>
+                        <div class="timing-value">0.0s</div>
+                    </div>
+                    <div class="timing-row">
+                        <div class="timing-label">MILP Solving</div>
+                        <div class="timing-bar-container">
+                            <div class="timing-bar-fill" style="width: 100.0%; background-color: #e74c3c;">
+                                97.4%
+                            </div>
+                        </div>
+                        <div class="timing-value">0.558s</div>
+                    </div>
+                    <div class="timing-row">
+                        <div class="timing-label">NN Evaluations</div>
+                        <div class="timing-bar-container">
+                            <div class="timing-bar-fill" style="width: 1.612764770722445%; background-color: #f39c12;">
+                                1.6%
+                            </div>
+                        </div>
+                        <div class="timing-value">0.009s</div>
+                    </div>
+                    <div class="timing-row">
+                        <div class="timing-label">Cut Generation</div>
+                        <div class="timing-bar-container">
+                            <div class="timing-bar-fill" style="width: 0.15336277021593359%; background-color: #2ecc71;">
+                                0.1%
+                            </div>
+                        </div>
+                        <div class="timing-value">0.001s</div>
+                    </div>
+                    <div style="margin-top: 10px; padding-top: 10px; border-top: 2px solid #dee2e6;">
+                        <strong>Total:</strong> 0.573s
+                    </div>
+                </div>
                 <table class="features-table">
                     <thead>
                         <tr>
@@ -1318,7 +1845,68 @@
                 <p><strong>Counterfactual Cost:</strong> 76505 
                    (deviation: +152.7)</p>
                 <p><strong>Features Changed:</strong> 5 / 236</p>
-                <p><strong>Solve Time:</strong> 0.412s</p>
+                <p><strong>Iterations:</strong> <span class="iterations-badge">7 iterations</span></p>
+                <p><strong>Total Solve Time:</strong> <span style="font-family: 'Courier New', monospace; font-size: 15px; font-weight: bold; color: #2c3e50;">0.418s</span></p>
+                <div class="timing-visual">
+                    <strong style="font-size: 15px;">⏱ Timing Breakdown</strong>
+                    <div class="timing-row">
+                        <div class="timing-label">Model Build</div>
+                        <div class="timing-bar-container">
+                            <div class="timing-bar-fill" style="width: 0.8541020464055743%; background-color: #3498db;">
+                                0.8%
+                            </div>
+                        </div>
+                        <div class="timing-value">0.003s</div>
+                    </div>
+                    <div class="timing-row">
+                        <div class="timing-label">Interior Search</div>
+                        <div class="timing-bar-container">
+                            <div class="timing-bar-fill" style="width: 0.8905972345182062%; background-color: #9b59b6;">
+                                0.8%
+                            </div>
+                        </div>
+                        <div class="timing-value">0.003s</div>
+                    </div>
+                    <div class="timing-row">
+                        <div class="timing-label">MILP Solving</div>
+                        <div class="timing-bar-container">
+                            <div class="timing-bar-fill" style="width: 100.0%; background-color: #e74c3c;">
+                                89.5%
+                            </div>
+                        </div>
+                        <div class="timing-value">0.374s</div>
+                    </div>
+                    <div class="timing-row">
+                        <div class="timing-label">NN Evaluations</div>
+                        <div class="timing-bar-container">
+                            <div class="timing-bar-fill" style="width: 1.7813218518919538%; background-color: #f39c12;">
+                                1.6%
+                            </div>
+                        </div>
+                        <div class="timing-value">0.007s</div>
+                    </div>
+                    <div class="timing-row">
+                        <div class="timing-label">Cut Generation</div>
+                        <div class="timing-bar-container">
+                            <div class="timing-bar-fill" style="width: 7.703032348876166%; background-color: #2ecc71;">
+                                6.9%
+                            </div>
+                        </div>
+                        <div class="timing-value">0.029s</div>
+                    </div>
+                    <div class="timing-row">
+                        <div class="timing-label">  └─ Bisection</div>
+                        <div class="timing-bar-container">
+                            <div class="timing-bar-fill" style="width: 6.688427904488335%; background-color: #16a085;">
+                                6.0%
+                            </div>
+                        </div>
+                        <div class="timing-value">0.025s</div>
+                    </div>
+                    <div style="margin-top: 10px; padding-top: 10px; border-top: 2px solid #dee2e6;">
+                        <strong>Total:</strong> 0.418s
+                    </div>
+                </div>
                 <table class="features-table">
                     <thead>
                         <tr>
@@ -1374,7 +1962,41 @@
                 <p><strong>Counterfactual Cost:</strong> 76505 
                    (deviation: +152.7)</p>
                 <p><strong>Features Changed:</strong> 5 / 236</p>
-                <p><strong>Solve Time:</strong> 0.8s</p>
+                <p><strong>Iterations:</strong> <span class="iterations-badge">1 iterations</span></p>
+                <p><strong>Total Solve Time:</strong> <span style="font-family: 'Courier New', monospace; font-size: 15px; font-weight: bold; color: #2c3e50;">1.006s</span></p>
+                <div class="timing-visual">
+                    <strong style="font-size: 15px;">⏱ Timing Breakdown</strong>
+                    <div class="timing-row">
+                        <div class="timing-label">Model Build</div>
+                        <div class="timing-bar-container">
+                            <div class="timing-bar-fill" style="width: 7.185921948574375%; background-color: #3498db;">
+                                6.7%
+                            </div>
+                        </div>
+                        <div class="timing-value">0.067s</div>
+                    </div>
+                    <div class="timing-row">
+                        <div class="timing-label">MIP Solve</div>
+                        <div class="timing-bar-container">
+                            <div class="timing-bar-fill" style="width: 100.0%; background-color: #e74c3c;">
+                                93.3%
+                            </div>
+                        </div>
+                        <div class="timing-value">0.938s</div>
+                    </div>
+                    <div class="timing-row">
+                        <div class="timing-label">Result Extraction</div>
+                        <div class="timing-bar-container">
+                            <div class="timing-bar-fill" style="width: 0.011739501975768347%; background-color: #2ecc71;">
+                                0.0%
+                            </div>
+                        </div>
+                        <div class="timing-value">0.0s</div>
+                    </div>
+                    <div style="margin-top: 10px; padding-top: 10px; border-top: 2px solid #dee2e6;">
+                        <strong>Total:</strong> 1.006s
+                    </div>
+                </div>
                 <table class="features-table">
                     <thead>
                         <tr>
@@ -1448,7 +2070,59 @@
                 <p><strong>Counterfactual Cost:</strong> 77631 
                    (deviation: +154.9)</p>
                 <p><strong>Features Changed:</strong> 4 / 236</p>
-                <p><strong>Solve Time:</strong> 0.286s</p>
+                <p><strong>Iterations:</strong> <span class="iterations-badge">5 iterations</span></p>
+                <p><strong>Total Solve Time:</strong> <span style="font-family: 'Courier New', monospace; font-size: 15px; font-weight: bold; color: #2c3e50;">0.307s</span></p>
+                <div class="timing-visual">
+                    <strong style="font-size: 15px;">⏱ Timing Breakdown</strong>
+                    <div class="timing-row">
+                        <div class="timing-label">Model Build</div>
+                        <div class="timing-bar-container">
+                            <div class="timing-bar-fill" style="width: 1.1013349757240785%; background-color: #3498db;">
+                                1.1%
+                            </div>
+                        </div>
+                        <div class="timing-value">0.003s</div>
+                    </div>
+                    <div class="timing-row">
+                        <div class="timing-label">Interior Search</div>
+                        <div class="timing-bar-container">
+                            <div class="timing-bar-fill" style="width: 0.0%; background-color: #9b59b6;">
+                                0.0%
+                            </div>
+                        </div>
+                        <div class="timing-value">0.0s</div>
+                    </div>
+                    <div class="timing-row">
+                        <div class="timing-label">MILP Solving</div>
+                        <div class="timing-bar-container">
+                            <div class="timing-bar-fill" style="width: 100.0%; background-color: #e74c3c;">
+                                97.2%
+                            </div>
+                        </div>
+                        <div class="timing-value">0.298s</div>
+                    </div>
+                    <div class="timing-row">
+                        <div class="timing-label">NN Evaluations</div>
+                        <div class="timing-bar-container">
+                            <div class="timing-bar-fill" style="width: 1.3899264923492853%; background-color: #f39c12;">
+                                1.4%
+                            </div>
+                        </div>
+                        <div class="timing-value">0.004s</div>
+                    </div>
+                    <div class="timing-row">
+                        <div class="timing-label">Cut Generation</div>
+                        <div class="timing-bar-container">
+                            <div class="timing-bar-fill" style="width: 0.11846009870341782%; background-color: #2ecc71;">
+                                0.1%
+                            </div>
+                        </div>
+                        <div class="timing-value">0.0s</div>
+                    </div>
+                    <div style="margin-top: 10px; padding-top: 10px; border-top: 2px solid #dee2e6;">
+                        <strong>Total:</strong> 0.307s
+                    </div>
+                </div>
                 <table class="features-table">
                     <thead>
                         <tr>
@@ -1497,7 +2171,68 @@
                 <p><strong>Counterfactual Cost:</strong> 77631 
                    (deviation: +154.9)</p>
                 <p><strong>Features Changed:</strong> 4 / 236</p>
-                <p><strong>Solve Time:</strong> 0.297s</p>
+                <p><strong>Iterations:</strong> <span class="iterations-badge">5 iterations</span></p>
+                <p><strong>Total Solve Time:</strong> <span style="font-family: 'Courier New', monospace; font-size: 15px; font-weight: bold; color: #2c3e50;">0.296s</span></p>
+                <div class="timing-visual">
+                    <strong style="font-size: 15px;">⏱ Timing Breakdown</strong>
+                    <div class="timing-row">
+                        <div class="timing-label">Model Build</div>
+                        <div class="timing-bar-container">
+                            <div class="timing-bar-fill" style="width: 1.2458887282913667%; background-color: #3498db;">
+                                1.1%
+                            </div>
+                        </div>
+                        <div class="timing-value">0.003s</div>
+                    </div>
+                    <div class="timing-row">
+                        <div class="timing-label">Interior Search</div>
+                        <div class="timing-bar-container">
+                            <div class="timing-bar-fill" style="width: 1.2530484939880342%; background-color: #9b59b6;">
+                                1.1%
+                            </div>
+                        </div>
+                        <div class="timing-value">0.003s</div>
+                    </div>
+                    <div class="timing-row">
+                        <div class="timing-label">MILP Solving</div>
+                        <div class="timing-bar-container">
+                            <div class="timing-bar-fill" style="width: 100.0%; background-color: #e74c3c;">
+                                90.1%
+                            </div>
+                        </div>
+                        <div class="timing-value">0.266s</div>
+                    </div>
+                    <div class="timing-row">
+                        <div class="timing-label">NN Evaluations</div>
+                        <div class="timing-bar-container">
+                            <div class="timing-bar-fill" style="width: 1.6419132683882918%; background-color: #f39c12;">
+                                1.5%
+                            </div>
+                        </div>
+                        <div class="timing-value">0.004s</div>
+                    </div>
+                    <div class="timing-row">
+                        <div class="timing-label">Cut Generation</div>
+                        <div class="timing-bar-container">
+                            <div class="timing-bar-fill" style="width: 6.488358668462575%; background-color: #2ecc71;">
+                                5.8%
+                            </div>
+                        </div>
+                        <div class="timing-value">0.017s</div>
+                    </div>
+                    <div class="timing-row">
+                        <div class="timing-label">  └─ Bisection</div>
+                        <div class="timing-bar-container">
+                            <div class="timing-bar-fill" style="width: 5.616030715394839%; background-color: #16a085;">
+                                5.1%
+                            </div>
+                        </div>
+                        <div class="timing-value">0.015s</div>
+                    </div>
+                    <div style="margin-top: 10px; padding-top: 10px; border-top: 2px solid #dee2e6;">
+                        <strong>Total:</strong> 0.296s
+                    </div>
+                </div>
                 <table class="features-table">
                     <thead>
                         <tr>
@@ -1546,7 +2281,41 @@
                 <p><strong>Counterfactual Cost:</strong> 77631 
                    (deviation: +155.0)</p>
                 <p><strong>Features Changed:</strong> 4 / 236</p>
-                <p><strong>Solve Time:</strong> 0.84s</p>
+                <p><strong>Iterations:</strong> <span class="iterations-badge">1 iterations</span></p>
+                <p><strong>Total Solve Time:</strong> <span style="font-family: 'Courier New', monospace; font-size: 15px; font-weight: bold; color: #2c3e50;">0.979s</span></p>
+                <div class="timing-visual">
+                    <strong style="font-size: 15px;">⏱ Timing Breakdown</strong>
+                    <div class="timing-row">
+                        <div class="timing-label">Model Build</div>
+                        <div class="timing-bar-container">
+                            <div class="timing-bar-fill" style="width: 7.6817615168827516%; background-color: #3498db;">
+                                7.1%
+                            </div>
+                        </div>
+                        <div class="timing-value">0.07s</div>
+                    </div>
+                    <div class="timing-row">
+                        <div class="timing-label">MIP Solve</div>
+                        <div class="timing-bar-container">
+                            <div class="timing-bar-fill" style="width: 100.0%; background-color: #e74c3c;">
+                                92.8%
+                            </div>
+                        </div>
+                        <div class="timing-value">0.909s</div>
+                    </div>
+                    <div class="timing-row">
+                        <div class="timing-label">Result Extraction</div>
+                        <div class="timing-bar-container">
+                            <div class="timing-bar-fill" style="width: 0.012437422577700436%; background-color: #2ecc71;">
+                                0.0%
+                            </div>
+                        </div>
+                        <div class="timing-value">0.0s</div>
+                    </div>
+                    <div style="margin-top: 10px; padding-top: 10px; border-top: 2px solid #dee2e6;">
+                        <strong>Total:</strong> 0.979s
+                    </div>
+                </div>
                 <table class="features-table">
                     <thead>
                         <tr>
@@ -1614,7 +2383,59 @@
                 <p><strong>Counterfactual Cost:</strong> 69912 
                    (deviation: +139.5)</p>
                 <p><strong>Features Changed:</strong> 9 / 236</p>
-                <p><strong>Solve Time:</strong> 0.603s</p>
+                <p><strong>Iterations:</strong> <span class="iterations-badge">11 iterations</span></p>
+                <p><strong>Total Solve Time:</strong> <span style="font-family: 'Courier New', monospace; font-size: 15px; font-weight: bold; color: #2c3e50;">0.6s</span></p>
+                <div class="timing-visual">
+                    <strong style="font-size: 15px;">⏱ Timing Breakdown</strong>
+                    <div class="timing-row">
+                        <div class="timing-label">Model Build</div>
+                        <div class="timing-bar-container">
+                            <div class="timing-bar-fill" style="width: 0.5783848269351612%; background-color: #3498db;">
+                                0.6%
+                            </div>
+                        </div>
+                        <div class="timing-value">0.003s</div>
+                    </div>
+                    <div class="timing-row">
+                        <div class="timing-label">Interior Search</div>
+                        <div class="timing-bar-container">
+                            <div class="timing-bar-fill" style="width: 0.0%; background-color: #9b59b6;">
+                                0.0%
+                            </div>
+                        </div>
+                        <div class="timing-value">0.0s</div>
+                    </div>
+                    <div class="timing-row">
+                        <div class="timing-label">MILP Solving</div>
+                        <div class="timing-bar-container">
+                            <div class="timing-bar-fill" style="width: 100.0%; background-color: #e74c3c;">
+                                96.6%
+                            </div>
+                        </div>
+                        <div class="timing-value">0.579s</div>
+                    </div>
+                    <div class="timing-row">
+                        <div class="timing-label">NN Evaluations</div>
+                        <div class="timing-bar-container">
+                            <div class="timing-bar-fill" style="width: 1.6823159096361668%; background-color: #f39c12;">
+                                1.6%
+                            </div>
+                        </div>
+                        <div class="timing-value">0.01s</div>
+                    </div>
+                    <div class="timing-row">
+                        <div class="timing-label">Cut Generation</div>
+                        <div class="timing-bar-container">
+                            <div class="timing-bar-fill" style="width: 0.9412179126048387%; background-color: #2ecc71;">
+                                0.9%
+                            </div>
+                        </div>
+                        <div class="timing-value">0.005s</div>
+                    </div>
+                    <div style="margin-top: 10px; padding-top: 10px; border-top: 2px solid #dee2e6;">
+                        <strong>Total:</strong> 0.6s
+                    </div>
+                </div>
                 <table class="features-table">
                     <thead>
                         <tr>
@@ -1698,7 +2519,68 @@
                 <p><strong>Counterfactual Cost:</strong> 69912 
                    (deviation: +139.5)</p>
                 <p><strong>Features Changed:</strong> 9 / 236</p>
-                <p><strong>Solve Time:</strong> 0.721s</p>
+                <p><strong>Iterations:</strong> <span class="iterations-badge">12 iterations</span></p>
+                <p><strong>Total Solve Time:</strong> <span style="font-family: 'Courier New', monospace; font-size: 15px; font-weight: bold; color: #2c3e50;">0.754s</span></p>
+                <div class="timing-visual">
+                    <strong style="font-size: 15px;">⏱ Timing Breakdown</strong>
+                    <div class="timing-row">
+                        <div class="timing-label">Model Build</div>
+                        <div class="timing-bar-container">
+                            <div class="timing-bar-fill" style="width: 0.4865619997942162%; background-color: #3498db;">
+                                0.4%
+                            </div>
+                        </div>
+                        <div class="timing-value">0.003s</div>
+                    </div>
+                    <div class="timing-row">
+                        <div class="timing-label">Interior Search</div>
+                        <div class="timing-bar-container">
+                            <div class="timing-bar-fill" style="width: 0.5345075031530533%; background-color: #9b59b6;">
+                                0.5%
+                            </div>
+                        </div>
+                        <div class="timing-value">0.004s</div>
+                    </div>
+                    <div class="timing-row">
+                        <div class="timing-label">MILP Solving</div>
+                        <div class="timing-bar-container">
+                            <div class="timing-bar-fill" style="width: 100.0%; background-color: #e74c3c;">
+                                89.5%
+                            </div>
+                        </div>
+                        <div class="timing-value">0.674s</div>
+                    </div>
+                    <div class="timing-row">
+                        <div class="timing-label">NN Evaluations</div>
+                        <div class="timing-bar-container">
+                            <div class="timing-bar-fill" style="width: 1.6316321519151151%; background-color: #f39c12;">
+                                1.5%
+                            </div>
+                        </div>
+                        <div class="timing-value">0.011s</div>
+                    </div>
+                    <div class="timing-row">
+                        <div class="timing-label">Cut Generation</div>
+                        <div class="timing-bar-container">
+                            <div class="timing-bar-fill" style="width: 8.765293678583387%; background-color: #2ecc71;">
+                                7.8%
+                            </div>
+                        </div>
+                        <div class="timing-value">0.059s</div>
+                    </div>
+                    <div class="timing-row">
+                        <div class="timing-label">  └─ Bisection</div>
+                        <div class="timing-bar-container">
+                            <div class="timing-bar-fill" style="width: 7.656288728104091%; background-color: #16a085;">
+                                6.9%
+                            </div>
+                        </div>
+                        <div class="timing-value">0.052s</div>
+                    </div>
+                    <div style="margin-top: 10px; padding-top: 10px; border-top: 2px solid #dee2e6;">
+                        <strong>Total:</strong> 0.754s
+                    </div>
+                </div>
                 <table class="features-table">
                     <thead>
                         <tr>
@@ -1782,7 +2664,41 @@
                 <p><strong>Counterfactual Cost:</strong> 69912 
                    (deviation: +139.5)</p>
                 <p><strong>Features Changed:</strong> 9 / 236</p>
-                <p><strong>Solve Time:</strong> 1.5s</p>
+                <p><strong>Iterations:</strong> <span class="iterations-badge">1 iterations</span></p>
+                <p><strong>Total Solve Time:</strong> <span style="font-family: 'Courier New', monospace; font-size: 15px; font-weight: bold; color: #2c3e50;">1.605s</span></p>
+                <div class="timing-visual">
+                    <strong style="font-size: 15px;">⏱ Timing Breakdown</strong>
+                    <div class="timing-row">
+                        <div class="timing-label">Model Build</div>
+                        <div class="timing-bar-container">
+                            <div class="timing-bar-fill" style="width: 4.273065124437634%; background-color: #3498db;">
+                                4.1%
+                            </div>
+                        </div>
+                        <div class="timing-value">0.066s</div>
+                    </div>
+                    <div class="timing-row">
+                        <div class="timing-label">MIP Solve</div>
+                        <div class="timing-bar-container">
+                            <div class="timing-bar-fill" style="width: 100.0%; background-color: #e74c3c;">
+                                95.9%
+                            </div>
+                        </div>
+                        <div class="timing-value">1.539s</div>
+                    </div>
+                    <div class="timing-row">
+                        <div class="timing-label">Result Extraction</div>
+                        <div class="timing-bar-container">
+                            <div class="timing-bar-fill" style="width: 0.012732807457026%; background-color: #2ecc71;">
+                                0.0%
+                            </div>
+                        </div>
+                        <div class="timing-value">0.0s</div>
+                    </div>
+                    <div style="margin-top: 10px; padding-top: 10px; border-top: 2px solid #dee2e6;">
+                        <strong>Total:</strong> 1.605s
+                    </div>
+                </div>
                 <table class="features-table">
                     <thead>
                         <tr>
@@ -1884,7 +2800,59 @@
                 <p><strong>Counterfactual Cost:</strong> 66942 
                    (deviation: +133.6)</p>
                 <p><strong>Features Changed:</strong> 8 / 236</p>
-                <p><strong>Solve Time:</strong> 0.287s</p>
+                <p><strong>Iterations:</strong> <span class="iterations-badge">6 iterations</span></p>
+                <p><strong>Total Solve Time:</strong> <span style="font-family: 'Courier New', monospace; font-size: 15px; font-weight: bold; color: #2c3e50;">0.28s</span></p>
+                <div class="timing-visual">
+                    <strong style="font-size: 15px;">⏱ Timing Breakdown</strong>
+                    <div class="timing-row">
+                        <div class="timing-label">Model Build</div>
+                        <div class="timing-bar-container">
+                            <div class="timing-bar-fill" style="width: 1.3578537590880588%; background-color: #3498db;">
+                                1.3%
+                            </div>
+                        </div>
+                        <div class="timing-value">0.004s</div>
+                    </div>
+                    <div class="timing-row">
+                        <div class="timing-label">Interior Search</div>
+                        <div class="timing-bar-container">
+                            <div class="timing-bar-fill" style="width: 0.0%; background-color: #9b59b6;">
+                                0.0%
+                            </div>
+                        </div>
+                        <div class="timing-value">0.0s</div>
+                    </div>
+                    <div class="timing-row">
+                        <div class="timing-label">MILP Solving</div>
+                        <div class="timing-bar-container">
+                            <div class="timing-bar-fill" style="width: 100.0%; background-color: #e74c3c;">
+                                96.0%
+                            </div>
+                        </div>
+                        <div class="timing-value">0.269s</div>
+                    </div>
+                    <div class="timing-row">
+                        <div class="timing-label">NN Evaluations</div>
+                        <div class="timing-bar-container">
+                            <div class="timing-bar-fill" style="width: 2.1413093900257305%; background-color: #f39c12;">
+                                2.1%
+                            </div>
+                        </div>
+                        <div class="timing-value">0.006s</div>
+                    </div>
+                    <div class="timing-row">
+                        <div class="timing-label">Cut Generation</div>
+                        <div class="timing-bar-container">
+                            <div class="timing-bar-fill" style="width: 0.17526416016447868%; background-color: #2ecc71;">
+                                0.2%
+                            </div>
+                        </div>
+                        <div class="timing-value">0.0s</div>
+                    </div>
+                    <div style="margin-top: 10px; padding-top: 10px; border-top: 2px solid #dee2e6;">
+                        <strong>Total:</strong> 0.28s
+                    </div>
+                </div>
                 <table class="features-table">
                     <thead>
                         <tr>
@@ -1961,7 +2929,68 @@
                 <p><strong>Counterfactual Cost:</strong> 66942 
                    (deviation: +133.6)</p>
                 <p><strong>Features Changed:</strong> 8 / 236</p>
-                <p><strong>Solve Time:</strong> 0.362s</p>
+                <p><strong>Iterations:</strong> <span class="iterations-badge">7 iterations</span></p>
+                <p><strong>Total Solve Time:</strong> <span style="font-family: 'Courier New', monospace; font-size: 15px; font-weight: bold; color: #2c3e50;">0.367s</span></p>
+                <div class="timing-visual">
+                    <strong style="font-size: 15px;">⏱ Timing Breakdown</strong>
+                    <div class="timing-row">
+                        <div class="timing-label">Model Build</div>
+                        <div class="timing-bar-container">
+                            <div class="timing-bar-fill" style="width: 1.0115214145388893%; background-color: #3498db;">
+                                0.9%
+                            </div>
+                        </div>
+                        <div class="timing-value">0.003s</div>
+                    </div>
+                    <div class="timing-row">
+                        <div class="timing-label">Interior Search</div>
+                        <div class="timing-bar-container">
+                            <div class="timing-bar-fill" style="width: 1.0890871041332275%; background-color: #9b59b6;">
+                                1.0%
+                            </div>
+                        </div>
+                        <div class="timing-value">0.004s</div>
+                    </div>
+                    <div class="timing-row">
+                        <div class="timing-label">MILP Solving</div>
+                        <div class="timing-bar-container">
+                            <div class="timing-bar-fill" style="width: 100.0%; background-color: #e74c3c;">
+                                88.2%
+                            </div>
+                        </div>
+                        <div class="timing-value">0.324s</div>
+                    </div>
+                    <div class="timing-row">
+                        <div class="timing-label">NN Evaluations</div>
+                        <div class="timing-bar-container">
+                            <div class="timing-bar-fill" style="width: 1.854652357650754%; background-color: #f39c12;">
+                                1.6%
+                            </div>
+                        </div>
+                        <div class="timing-value">0.006s</div>
+                    </div>
+                    <div class="timing-row">
+                        <div class="timing-label">Cut Generation</div>
+                        <div class="timing-bar-container">
+                            <div class="timing-bar-fill" style="width: 8.988559613247011%; background-color: #2ecc71;">
+                                7.9%
+                            </div>
+                        </div>
+                        <div class="timing-value">0.029s</div>
+                    </div>
+                    <div class="timing-row">
+                        <div class="timing-label">  └─ Bisection</div>
+                        <div class="timing-bar-container">
+                            <div class="timing-bar-fill" style="width: 7.8152036117767265%; background-color: #16a085;">
+                                6.9%
+                            </div>
+                        </div>
+                        <div class="timing-value">0.025s</div>
+                    </div>
+                    <div style="margin-top: 10px; padding-top: 10px; border-top: 2px solid #dee2e6;">
+                        <strong>Total:</strong> 0.367s
+                    </div>
+                </div>
                 <table class="features-table">
                     <thead>
                         <tr>
@@ -2038,7 +3067,41 @@
                 <p><strong>Counterfactual Cost:</strong> 66942 
                    (deviation: +133.6)</p>
                 <p><strong>Features Changed:</strong> 8 / 236</p>
-                <p><strong>Solve Time:</strong> 0.913s</p>
+                <p><strong>Iterations:</strong> <span class="iterations-badge">1 iterations</span></p>
+                <p><strong>Total Solve Time:</strong> <span style="font-family: 'Courier New', monospace; font-size: 15px; font-weight: bold; color: #2c3e50;">1.403s</span></p>
+                <div class="timing-visual">
+                    <strong style="font-size: 15px;">⏱ Timing Breakdown</strong>
+                    <div class="timing-row">
+                        <div class="timing-label">Model Build</div>
+                        <div class="timing-bar-container">
+                            <div class="timing-bar-fill" style="width: 46.64798190633398%; background-color: #3498db;">
+                                31.8%
+                            </div>
+                        </div>
+                        <div class="timing-value">0.446s</div>
+                    </div>
+                    <div class="timing-row">
+                        <div class="timing-label">MIP Solve</div>
+                        <div class="timing-bar-container">
+                            <div class="timing-bar-fill" style="width: 100.0%; background-color: #e74c3c;">
+                                68.2%
+                            </div>
+                        </div>
+                        <div class="timing-value">0.957s</div>
+                    </div>
+                    <div class="timing-row">
+                        <div class="timing-label">Result Extraction</div>
+                        <div class="timing-bar-container">
+                            <div class="timing-bar-fill" style="width: 0.011712239739081202%; background-color: #2ecc71;">
+                                0.0%
+                            </div>
+                        </div>
+                        <div class="timing-value">0.0s</div>
+                    </div>
+                    <div style="margin-top: 10px; padding-top: 10px; border-top: 2px solid #dee2e6;">
+                        <strong>Total:</strong> 1.403s
+                    </div>
+                </div>
                 <table class="features-table">
                     <thead>
                         <tr>
@@ -2133,7 +3196,59 @@
                 <p><strong>Counterfactual Cost:</strong> 67927 
                    (deviation: +135.6)</p>
                 <p><strong>Features Changed:</strong> 8 / 236</p>
-                <p><strong>Solve Time:</strong> 3.756s</p>
+                <p><strong>Iterations:</strong> <span class="iterations-badge">31 iterations</span></p>
+                <p><strong>Total Solve Time:</strong> <span style="font-family: 'Courier New', monospace; font-size: 15px; font-weight: bold; color: #2c3e50;">3.651s</span></p>
+                <div class="timing-visual">
+                    <strong style="font-size: 15px;">⏱ Timing Breakdown</strong>
+                    <div class="timing-row">
+                        <div class="timing-label">Model Build</div>
+                        <div class="timing-bar-container">
+                            <div class="timing-bar-fill" style="width: 0.0912579155052308%; background-color: #3498db;">
+                                0.1%
+                            </div>
+                        </div>
+                        <div class="timing-value">0.003s</div>
+                    </div>
+                    <div class="timing-row">
+                        <div class="timing-label">Interior Search</div>
+                        <div class="timing-bar-container">
+                            <div class="timing-bar-fill" style="width: 0.0%; background-color: #9b59b6;">
+                                0.0%
+                            </div>
+                        </div>
+                        <div class="timing-value">0.0s</div>
+                    </div>
+                    <div class="timing-row">
+                        <div class="timing-label">MILP Solving</div>
+                        <div class="timing-bar-container">
+                            <div class="timing-bar-fill" style="width: 100.0%; background-color: #e74c3c;">
+                                98.9%
+                            </div>
+                        </div>
+                        <div class="timing-value">3.612s</div>
+                    </div>
+                    <div class="timing-row">
+                        <div class="timing-label">NN Evaluations</div>
+                        <div class="timing-bar-container">
+                            <div class="timing-bar-fill" style="width: 0.7618095129643474%; background-color: #f39c12;">
+                                0.8%
+                            </div>
+                        </div>
+                        <div class="timing-value">0.028s</div>
+                    </div>
+                    <div class="timing-row">
+                        <div class="timing-label">Cut Generation</div>
+                        <div class="timing-bar-container">
+                            <div class="timing-bar-fill" style="width: 0.06604052276579347%; background-color: #2ecc71;">
+                                0.1%
+                            </div>
+                        </div>
+                        <div class="timing-value">0.002s</div>
+                    </div>
+                    <div style="margin-top: 10px; padding-top: 10px; border-top: 2px solid #dee2e6;">
+                        <strong>Total:</strong> 3.651s
+                    </div>
+                </div>
                 <table class="features-table">
                     <thead>
                         <tr>
@@ -2210,7 +3325,68 @@
                 <p><strong>Counterfactual Cost:</strong> 67927 
                    (deviation: +135.6)</p>
                 <p><strong>Features Changed:</strong> 8 / 236</p>
-                <p><strong>Solve Time:</strong> 4.546s</p>
+                <p><strong>Iterations:</strong> <span class="iterations-badge">33 iterations</span></p>
+                <p><strong>Total Solve Time:</strong> <span style="font-family: 'Courier New', monospace; font-size: 15px; font-weight: bold; color: #2c3e50;">4.18s</span></p>
+                <div class="timing-visual">
+                    <strong style="font-size: 15px;">⏱ Timing Breakdown</strong>
+                    <div class="timing-row">
+                        <div class="timing-label">Model Build</div>
+                        <div class="timing-bar-container">
+                            <div class="timing-bar-fill" style="width: 0.0812521787707405%; background-color: #3498db;">
+                                0.1%
+                            </div>
+                        </div>
+                        <div class="timing-value">0.003s</div>
+                    </div>
+                    <div class="timing-row">
+                        <div class="timing-label">Interior Search</div>
+                        <div class="timing-bar-container">
+                            <div class="timing-bar-fill" style="width: 0.08533562779676239%; background-color: #9b59b6;">
+                                0.1%
+                            </div>
+                        </div>
+                        <div class="timing-value">0.003s</div>
+                    </div>
+                    <div class="timing-row">
+                        <div class="timing-label">MILP Solving</div>
+                        <div class="timing-bar-container">
+                            <div class="timing-bar-fill" style="width: 100.0%; background-color: #e74c3c;">
+                                94.4%
+                            </div>
+                        </div>
+                        <div class="timing-value">3.947s</div>
+                    </div>
+                    <div class="timing-row">
+                        <div class="timing-label">NN Evaluations</div>
+                        <div class="timing-bar-container">
+                            <div class="timing-bar-fill" style="width: 0.7468483294072421%; background-color: #f39c12;">
+                                0.7%
+                            </div>
+                        </div>
+                        <div class="timing-value">0.029s</div>
+                    </div>
+                    <div class="timing-row">
+                        <div class="timing-label">Cut Generation</div>
+                        <div class="timing-bar-container">
+                            <div class="timing-bar-fill" style="width: 4.816820765522256%; background-color: #2ecc71;">
+                                4.5%
+                            </div>
+                        </div>
+                        <div class="timing-value">0.19s</div>
+                    </div>
+                    <div class="timing-row">
+                        <div class="timing-label">  └─ Bisection</div>
+                        <div class="timing-bar-container">
+                            <div class="timing-bar-fill" style="width: 4.204297371013903%; background-color: #16a085;">
+                                4.0%
+                            </div>
+                        </div>
+                        <div class="timing-value">0.166s</div>
+                    </div>
+                    <div style="margin-top: 10px; padding-top: 10px; border-top: 2px solid #dee2e6;">
+                        <strong>Total:</strong> 4.18s
+                    </div>
+                </div>
                 <table class="features-table">
                     <thead>
                         <tr>
@@ -2287,7 +3463,41 @@
                 <p><strong>Counterfactual Cost:</strong> 67927 
                    (deviation: +135.6)</p>
                 <p><strong>Features Changed:</strong> 8 / 236</p>
-                <p><strong>Solve Time:</strong> 1.044s</p>
+                <p><strong>Iterations:</strong> <span class="iterations-badge">1 iterations</span></p>
+                <p><strong>Total Solve Time:</strong> <span style="font-family: 'Courier New', monospace; font-size: 15px; font-weight: bold; color: #2c3e50;">1.232s</span></p>
+                <div class="timing-visual">
+                    <strong style="font-size: 15px;">⏱ Timing Breakdown</strong>
+                    <div class="timing-row">
+                        <div class="timing-label">Model Build</div>
+                        <div class="timing-bar-container">
+                            <div class="timing-bar-fill" style="width: 4.343466971788919%; background-color: #3498db;">
+                                4.2%
+                            </div>
+                        </div>
+                        <div class="timing-value">0.051s</div>
+                    </div>
+                    <div class="timing-row">
+                        <div class="timing-label">MIP Solve</div>
+                        <div class="timing-bar-container">
+                            <div class="timing-bar-fill" style="width: 100.0%; background-color: #e74c3c;">
+                                95.8%
+                            </div>
+                        </div>
+                        <div class="timing-value">1.18s</div>
+                    </div>
+                    <div class="timing-row">
+                        <div class="timing-label">Result Extraction</div>
+                        <div class="timing-bar-container">
+                            <div class="timing-bar-fill" style="width: 0.017292415760582464%; background-color: #2ecc71;">
+                                0.0%
+                            </div>
+                        </div>
+                        <div class="timing-value">0.0s</div>
+                    </div>
+                    <div style="margin-top: 10px; padding-top: 10px; border-top: 2px solid #dee2e6;">
+                        <strong>Total:</strong> 1.232s
+                    </div>
+                </div>
                 <table class="features-table">
                     <thead>
                         <tr>
@@ -2383,7 +3593,59 @@
                 <p><strong>Counterfactual Cost:</strong> 59924 
                    (deviation: +119.6)</p>
                 <p><strong>Features Changed:</strong> 13 / 236</p>
-                <p><strong>Solve Time:</strong> 2.695s</p>
+                <p><strong>Iterations:</strong> <span class="iterations-badge">30 iterations</span></p>
+                <p><strong>Total Solve Time:</strong> <span style="font-family: 'Courier New', monospace; font-size: 15px; font-weight: bold; color: #2c3e50;">2.745s</span></p>
+                <div class="timing-visual">
+                    <strong style="font-size: 15px;">⏱ Timing Breakdown</strong>
+                    <div class="timing-row">
+                        <div class="timing-label">Model Build</div>
+                        <div class="timing-bar-container">
+                            <div class="timing-bar-fill" style="width: 0.13112233651419064%; background-color: #3498db;">
+                                0.1%
+                            </div>
+                        </div>
+                        <div class="timing-value">0.004s</div>
+                    </div>
+                    <div class="timing-row">
+                        <div class="timing-label">Interior Search</div>
+                        <div class="timing-bar-container">
+                            <div class="timing-bar-fill" style="width: 0.0%; background-color: #9b59b6;">
+                                0.0%
+                            </div>
+                        </div>
+                        <div class="timing-value">0.0s</div>
+                    </div>
+                    <div class="timing-row">
+                        <div class="timing-label">MILP Solving</div>
+                        <div class="timing-bar-container">
+                            <div class="timing-bar-fill" style="width: 100.0%; background-color: #e74c3c;">
+                                98.6%
+                            </div>
+                        </div>
+                        <div class="timing-value">2.705s</div>
+                    </div>
+                    <div class="timing-row">
+                        <div class="timing-label">NN Evaluations</div>
+                        <div class="timing-bar-container">
+                            <div class="timing-bar-fill" style="width: 1.0395567805901218%; background-color: #f39c12;">
+                                1.0%
+                            </div>
+                        </div>
+                        <div class="timing-value">0.028s</div>
+                    </div>
+                    <div class="timing-row">
+                        <div class="timing-label">Cut Generation</div>
+                        <div class="timing-bar-container">
+                            <div class="timing-bar-fill" style="width: 0.09051733521548282%; background-color: #2ecc71;">
+                                0.1%
+                            </div>
+                        </div>
+                        <div class="timing-value">0.002s</div>
+                    </div>
+                    <div style="margin-top: 10px; padding-top: 10px; border-top: 2px solid #dee2e6;">
+                        <strong>Total:</strong> 2.745s
+                    </div>
+                </div>
                 <table class="features-table">
                     <thead>
                         <tr>
@@ -2495,7 +3757,68 @@
                 <p><strong>Counterfactual Cost:</strong> 59924 
                    (deviation: +119.6)</p>
                 <p><strong>Features Changed:</strong> 13 / 236</p>
-                <p><strong>Solve Time:</strong> 4.271s</p>
+                <p><strong>Iterations:</strong> <span class="iterations-badge">38 iterations</span></p>
+                <p><strong>Total Solve Time:</strong> <span style="font-family: 'Courier New', monospace; font-size: 15px; font-weight: bold; color: #2c3e50;">4.207s</span></p>
+                <div class="timing-visual">
+                    <strong style="font-size: 15px;">⏱ Timing Breakdown</strong>
+                    <div class="timing-row">
+                        <div class="timing-label">Model Build</div>
+                        <div class="timing-bar-container">
+                            <div class="timing-bar-fill" style="width: 0.08438014476580342%; background-color: #3498db;">
+                                0.1%
+                            </div>
+                        </div>
+                        <div class="timing-value">0.003s</div>
+                    </div>
+                    <div class="timing-row">
+                        <div class="timing-label">Interior Search</div>
+                        <div class="timing-bar-container">
+                            <div class="timing-bar-fill" style="width: 0.08387099081419597%; background-color: #9b59b6;">
+                                0.1%
+                            </div>
+                        </div>
+                        <div class="timing-value">0.003s</div>
+                    </div>
+                    <div class="timing-row">
+                        <div class="timing-label">MILP Solving</div>
+                        <div class="timing-bar-container">
+                            <div class="timing-bar-fill" style="width: 100.0%; background-color: #e74c3c;">
+                                93.5%
+                            </div>
+                        </div>
+                        <div class="timing-value">3.933s</div>
+                    </div>
+                    <div class="timing-row">
+                        <div class="timing-label">NN Evaluations</div>
+                        <div class="timing-bar-container">
+                            <div class="timing-bar-fill" style="width: 0.8842913095239611%; background-color: #f39c12;">
+                                0.8%
+                            </div>
+                        </div>
+                        <div class="timing-value">0.035s</div>
+                    </div>
+                    <div class="timing-row">
+                        <div class="timing-label">Cut Generation</div>
+                        <div class="timing-bar-container">
+                            <div class="timing-bar-fill" style="width: 5.703245559435026%; background-color: #2ecc71;">
+                                5.3%
+                            </div>
+                        </div>
+                        <div class="timing-value">0.224s</div>
+                    </div>
+                    <div class="timing-row">
+                        <div class="timing-label">  └─ Bisection</div>
+                        <div class="timing-bar-container">
+                            <div class="timing-bar-fill" style="width: 5.008274660917107%; background-color: #16a085;">
+                                4.7%
+                            </div>
+                        </div>
+                        <div class="timing-value">0.197s</div>
+                    </div>
+                    <div style="margin-top: 10px; padding-top: 10px; border-top: 2px solid #dee2e6;">
+                        <strong>Total:</strong> 4.207s
+                    </div>
+                </div>
                 <table class="features-table">
                     <thead>
                         <tr>
@@ -2607,7 +3930,41 @@
                 <p><strong>Counterfactual Cost:</strong> 59924 
                    (deviation: +119.6)</p>
                 <p><strong>Features Changed:</strong> 13 / 236</p>
-                <p><strong>Solve Time:</strong> 0.981s</p>
+                <p><strong>Iterations:</strong> <span class="iterations-badge">1 iterations</span></p>
+                <p><strong>Total Solve Time:</strong> <span style="font-family: 'Courier New', monospace; font-size: 15px; font-weight: bold; color: #2c3e50;">1.129s</span></p>
+                <div class="timing-visual">
+                    <strong style="font-size: 15px;">⏱ Timing Breakdown</strong>
+                    <div class="timing-row">
+                        <div class="timing-label">Model Build</div>
+                        <div class="timing-bar-container">
+                            <div class="timing-bar-fill" style="width: 5.9459106051235935%; background-color: #3498db;">
+                                5.6%
+                            </div>
+                        </div>
+                        <div class="timing-value">0.063s</div>
+                    </div>
+                    <div class="timing-row">
+                        <div class="timing-label">MIP Solve</div>
+                        <div class="timing-bar-container">
+                            <div class="timing-bar-fill" style="width: 100.0%; background-color: #e74c3c;">
+                                94.3%
+                            </div>
+                        </div>
+                        <div class="timing-value">1.065s</div>
+                    </div>
+                    <div class="timing-row">
+                        <div class="timing-label">Result Extraction</div>
+                        <div class="timing-bar-container">
+                            <div class="timing-bar-fill" style="width: 0.010881826498904429%; background-color: #2ecc71;">
+                                0.0%
+                            </div>
+                        </div>
+                        <div class="timing-value">0.0s</div>
+                    </div>
+                    <div style="margin-top: 10px; padding-top: 10px; border-top: 2px solid #dee2e6;">
+                        <strong>Total:</strong> 1.129s
+                    </div>
+                </div>
                 <table class="features-table">
                     <thead>
                         <tr>
@@ -2737,7 +4094,59 @@
                 <p><strong>Counterfactual Cost:</strong> 57379 
                    (deviation: +114.5)</p>
                 <p><strong>Features Changed:</strong> 13 / 236</p>
-                <p><strong>Solve Time:</strong> 2.16s</p>
+                <p><strong>Iterations:</strong> <span class="iterations-badge">23 iterations</span></p>
+                <p><strong>Total Solve Time:</strong> <span style="font-family: 'Courier New', monospace; font-size: 15px; font-weight: bold; color: #2c3e50;">2.165s</span></p>
+                <div class="timing-visual">
+                    <strong style="font-size: 15px;">⏱ Timing Breakdown</strong>
+                    <div class="timing-row">
+                        <div class="timing-label">Model Build</div>
+                        <div class="timing-bar-container">
+                            <div class="timing-bar-fill" style="width: 0.1535547631534277%; background-color: #3498db;">
+                                0.2%
+                            </div>
+                        </div>
+                        <div class="timing-value">0.003s</div>
+                    </div>
+                    <div class="timing-row">
+                        <div class="timing-label">Interior Search</div>
+                        <div class="timing-bar-container">
+                            <div class="timing-bar-fill" style="width: 0.0%; background-color: #9b59b6;">
+                                0.0%
+                            </div>
+                        </div>
+                        <div class="timing-value">0.0s</div>
+                    </div>
+                    <div class="timing-row">
+                        <div class="timing-label">MILP Solving</div>
+                        <div class="timing-bar-container">
+                            <div class="timing-bar-fill" style="width: 100.0%; background-color: #e74c3c;">
+                                98.5%
+                            </div>
+                        </div>
+                        <div class="timing-value">2.134s</div>
+                    </div>
+                    <div class="timing-row">
+                        <div class="timing-label">NN Evaluations</div>
+                        <div class="timing-bar-container">
+                            <div class="timing-bar-fill" style="width: 1.0109403717833372%; background-color: #f39c12;">
+                                1.0%
+                            </div>
+                        </div>
+                        <div class="timing-value">0.022s</div>
+                    </div>
+                    <div class="timing-row">
+                        <div class="timing-label">Cut Generation</div>
+                        <div class="timing-bar-container">
+                            <div class="timing-bar-fill" style="width: 0.0954004084885243%; background-color: #2ecc71;">
+                                0.1%
+                            </div>
+                        </div>
+                        <div class="timing-value">0.002s</div>
+                    </div>
+                    <div style="margin-top: 10px; padding-top: 10px; border-top: 2px solid #dee2e6;">
+                        <strong>Total:</strong> 2.165s
+                    </div>
+                </div>
                 <table class="features-table">
                     <thead>
                         <tr>
@@ -2849,7 +4258,68 @@
                 <p><strong>Counterfactual Cost:</strong> 57379 
                    (deviation: +114.5)</p>
                 <p><strong>Features Changed:</strong> 13 / 236</p>
-                <p><strong>Solve Time:</strong> 1.934s</p>
+                <p><strong>Iterations:</strong> <span class="iterations-badge">22 iterations</span></p>
+                <p><strong>Total Solve Time:</strong> <span style="font-family: 'Courier New', monospace; font-size: 15px; font-weight: bold; color: #2c3e50;">2.028s</span></p>
+                <div class="timing-visual">
+                    <strong style="font-size: 15px;">⏱ Timing Breakdown</strong>
+                    <div class="timing-row">
+                        <div class="timing-label">Model Build</div>
+                        <div class="timing-bar-container">
+                            <div class="timing-bar-fill" style="width: 0.16613805527384695%; background-color: #3498db;">
+                                0.2%
+                            </div>
+                        </div>
+                        <div class="timing-value">0.003s</div>
+                    </div>
+                    <div class="timing-row">
+                        <div class="timing-label">Interior Search</div>
+                        <div class="timing-bar-container">
+                            <div class="timing-bar-fill" style="width: 0.18824544473274174%; background-color: #9b59b6;">
+                                0.2%
+                            </div>
+                        </div>
+                        <div class="timing-value">0.004s</div>
+                    </div>
+                    <div class="timing-row">
+                        <div class="timing-label">MILP Solving</div>
+                        <div class="timing-bar-container">
+                            <div class="timing-bar-fill" style="width: 100.0%; background-color: #e74c3c;">
+                                91.9%
+                            </div>
+                        </div>
+                        <div class="timing-value">1.864s</div>
+                    </div>
+                    <div class="timing-row">
+                        <div class="timing-label">NN Evaluations</div>
+                        <div class="timing-bar-container">
+                            <div class="timing-bar-fill" style="width: 1.1133143160315293%; background-color: #f39c12;">
+                                1.0%
+                            </div>
+                        </div>
+                        <div class="timing-value">0.021s</div>
+                    </div>
+                    <div class="timing-row">
+                        <div class="timing-label">Cut Generation</div>
+                        <div class="timing-bar-container">
+                            <div class="timing-bar-fill" style="width: 7.100540390059812%; background-color: #2ecc71;">
+                                6.5%
+                            </div>
+                        </div>
+                        <div class="timing-value">0.132s</div>
+                    </div>
+                    <div class="timing-row">
+                        <div class="timing-label">  └─ Bisection</div>
+                        <div class="timing-bar-container">
+                            <div class="timing-bar-fill" style="width: 6.227324093689786%; background-color: #16a085;">
+                                5.7%
+                            </div>
+                        </div>
+                        <div class="timing-value">0.116s</div>
+                    </div>
+                    <div style="margin-top: 10px; padding-top: 10px; border-top: 2px solid #dee2e6;">
+                        <strong>Total:</strong> 2.028s
+                    </div>
+                </div>
                 <table class="features-table">
                     <thead>
                         <tr>
@@ -2961,7 +4431,41 @@
                 <p><strong>Counterfactual Cost:</strong> 57379 
                    (deviation: +114.5)</p>
                 <p><strong>Features Changed:</strong> 13 / 236</p>
-                <p><strong>Solve Time:</strong> 1.048s</p>
+                <p><strong>Iterations:</strong> <span class="iterations-badge">1 iterations</span></p>
+                <p><strong>Total Solve Time:</strong> <span style="font-family: 'Courier New', monospace; font-size: 15px; font-weight: bold; color: #2c3e50;">1.265s</span></p>
+                <div class="timing-visual">
+                    <strong style="font-size: 15px;">⏱ Timing Breakdown</strong>
+                    <div class="timing-row">
+                        <div class="timing-label">Model Build</div>
+                        <div class="timing-bar-container">
+                            <div class="timing-bar-fill" style="width: 5.446944035961033%; background-color: #3498db;">
+                                5.2%
+                            </div>
+                        </div>
+                        <div class="timing-value">0.065s</div>
+                    </div>
+                    <div class="timing-row">
+                        <div class="timing-label">MIP Solve</div>
+                        <div class="timing-bar-container">
+                            <div class="timing-bar-fill" style="width: 100.0%; background-color: #e74c3c;">
+                                94.8%
+                            </div>
+                        </div>
+                        <div class="timing-value">1.199s</div>
+                    </div>
+                    <div class="timing-row">
+                        <div class="timing-label">Result Extraction</div>
+                        <div class="timing-bar-container">
+                            <div class="timing-bar-fill" style="width: 0.009682978874006749%; background-color: #2ecc71;">
+                                0.0%
+                            </div>
+                        </div>
+                        <div class="timing-value">0.0s</div>
+                    </div>
+                    <div style="margin-top: 10px; padding-top: 10px; border-top: 2px solid #dee2e6;">
+                        <strong>Total:</strong> 1.265s
+                    </div>
+                </div>
                 <table class="features-table">
                     <thead>
                         <tr>
@@ -3091,7 +4595,59 @@
                 <p><strong>Counterfactual Cost:</strong> 58223 
                    (deviation: +116.2)</p>
                 <p><strong>Features Changed:</strong> 13 / 236</p>
-                <p><strong>Solve Time:</strong> 4.403s</p>
+                <p><strong>Iterations:</strong> <span class="iterations-badge">36 iterations</span></p>
+                <p><strong>Total Solve Time:</strong> <span style="font-family: 'Courier New', monospace; font-size: 15px; font-weight: bold; color: #2c3e50;">3.897s</span></p>
+                <div class="timing-visual">
+                    <strong style="font-size: 15px;">⏱ Timing Breakdown</strong>
+                    <div class="timing-row">
+                        <div class="timing-label">Model Build</div>
+                        <div class="timing-bar-container">
+                            <div class="timing-bar-fill" style="width: 0.09173448061897065%; background-color: #3498db;">
+                                0.1%
+                            </div>
+                        </div>
+                        <div class="timing-value">0.004s</div>
+                    </div>
+                    <div class="timing-row">
+                        <div class="timing-label">Interior Search</div>
+                        <div class="timing-bar-container">
+                            <div class="timing-bar-fill" style="width: 0.0%; background-color: #9b59b6;">
+                                0.0%
+                            </div>
+                        </div>
+                        <div class="timing-value">0.0s</div>
+                    </div>
+                    <div class="timing-row">
+                        <div class="timing-label">MILP Solving</div>
+                        <div class="timing-bar-container">
+                            <div class="timing-bar-fill" style="width: 100.0%; background-color: #e74c3c;">
+                                98.8%
+                            </div>
+                        </div>
+                        <div class="timing-value">3.851s</div>
+                    </div>
+                    <div class="timing-row">
+                        <div class="timing-label">NN Evaluations</div>
+                        <div class="timing-bar-container">
+                            <div class="timing-bar-fill" style="width: 0.8538153663117285%; background-color: #f39c12;">
+                                0.8%
+                            </div>
+                        </div>
+                        <div class="timing-value">0.033s</div>
+                    </div>
+                    <div class="timing-row">
+                        <div class="timing-label">Cut Generation</div>
+                        <div class="timing-bar-container">
+                            <div class="timing-bar-fill" style="width: 0.07771863069851244%; background-color: #2ecc71;">
+                                0.1%
+                            </div>
+                        </div>
+                        <div class="timing-value">0.003s</div>
+                    </div>
+                    <div style="margin-top: 10px; padding-top: 10px; border-top: 2px solid #dee2e6;">
+                        <strong>Total:</strong> 3.897s
+                    </div>
+                </div>
                 <table class="features-table">
                     <thead>
                         <tr>
@@ -3203,7 +4759,68 @@
                 <p><strong>Counterfactual Cost:</strong> 58223 
                    (deviation: +116.2)</p>
                 <p><strong>Features Changed:</strong> 13 / 236</p>
-                <p><strong>Solve Time:</strong> 3.368s</p>
+                <p><strong>Iterations:</strong> <span class="iterations-badge">33 iterations</span></p>
+                <p><strong>Total Solve Time:</strong> <span style="font-family: 'Courier New', monospace; font-size: 15px; font-weight: bold; color: #2c3e50;">3.075s</span></p>
+                <div class="timing-visual">
+                    <strong style="font-size: 15px;">⏱ Timing Breakdown</strong>
+                    <div class="timing-row">
+                        <div class="timing-label">Model Build</div>
+                        <div class="timing-bar-container">
+                            <div class="timing-bar-fill" style="width: 0.11227512726116305%; background-color: #3498db;">
+                                0.1%
+                            </div>
+                        </div>
+                        <div class="timing-value">0.003s</div>
+                    </div>
+                    <div class="timing-row">
+                        <div class="timing-label">Interior Search</div>
+                        <div class="timing-bar-container">
+                            <div class="timing-bar-fill" style="width: 0.11853090141658716%; background-color: #9b59b6;">
+                                0.1%
+                            </div>
+                        </div>
+                        <div class="timing-value">0.003s</div>
+                    </div>
+                    <div class="timing-row">
+                        <div class="timing-label">MILP Solving</div>
+                        <div class="timing-bar-container">
+                            <div class="timing-bar-fill" style="width: 100.0%; background-color: #e74c3c;">
+                                92.0%
+                            </div>
+                        </div>
+                        <div class="timing-value">2.828s</div>
+                    </div>
+                    <div class="timing-row">
+                        <div class="timing-label">NN Evaluations</div>
+                        <div class="timing-bar-container">
+                            <div class="timing-bar-fill" style="width: 1.0873327992599637%; background-color: #f39c12;">
+                                1.0%
+                            </div>
+                        </div>
+                        <div class="timing-value">0.031s</div>
+                    </div>
+                    <div class="timing-row">
+                        <div class="timing-label">Cut Generation</div>
+                        <div class="timing-bar-container">
+                            <div class="timing-bar-fill" style="width: 7.19799322858818%; background-color: #2ecc71;">
+                                6.6%
+                            </div>
+                        </div>
+                        <div class="timing-value">0.204s</div>
+                    </div>
+                    <div class="timing-row">
+                        <div class="timing-label">  └─ Bisection</div>
+                        <div class="timing-bar-container">
+                            <div class="timing-bar-fill" style="width: 6.329578800918166%; background-color: #16a085;">
+                                5.8%
+                            </div>
+                        </div>
+                        <div class="timing-value">0.179s</div>
+                    </div>
+                    <div style="margin-top: 10px; padding-top: 10px; border-top: 2px solid #dee2e6;">
+                        <strong>Total:</strong> 3.075s
+                    </div>
+                </div>
                 <table class="features-table">
                     <thead>
                         <tr>
@@ -3315,7 +4932,41 @@
                 <p><strong>Counterfactual Cost:</strong> 58223 
                    (deviation: +116.2)</p>
                 <p><strong>Features Changed:</strong> 13 / 236</p>
-                <p><strong>Solve Time:</strong> 1.016s</p>
+                <p><strong>Iterations:</strong> <span class="iterations-badge">1 iterations</span></p>
+                <p><strong>Total Solve Time:</strong> <span style="font-family: 'Courier New', monospace; font-size: 15px; font-weight: bold; color: #2c3e50;">1.114s</span></p>
+                <div class="timing-visual">
+                    <strong style="font-size: 15px;">⏱ Timing Breakdown</strong>
+                    <div class="timing-row">
+                        <div class="timing-label">Model Build</div>
+                        <div class="timing-bar-container">
+                            <div class="timing-bar-fill" style="width: 6.3652170427270764%; background-color: #3498db;">
+                                6.0%
+                            </div>
+                        </div>
+                        <div class="timing-value">0.067s</div>
+                    </div>
+                    <div class="timing-row">
+                        <div class="timing-label">MIP Solve</div>
+                        <div class="timing-bar-container">
+                            <div class="timing-bar-fill" style="width: 100.0%; background-color: #e74c3c;">
+                                94.0%
+                            </div>
+                        </div>
+                        <div class="timing-value">1.047s</div>
+                    </div>
+                    <div class="timing-row">
+                        <div class="timing-label">Result Extraction</div>
+                        <div class="timing-bar-container">
+                            <div class="timing-bar-fill" style="width: 0.011661494156270399%; background-color: #2ecc71;">
+                                0.0%
+                            </div>
+                        </div>
+                        <div class="timing-value">0.0s</div>
+                    </div>
+                    <div style="margin-top: 10px; padding-top: 10px; border-top: 2px solid #dee2e6;">
+                        <strong>Total:</strong> 1.114s
+                    </div>
+                </div>
                 <table class="features-table">
                     <thead>
                         <tr>
@@ -3446,7 +5097,59 @@
                 <p><strong>Counterfactual Cost:</strong> 49937 
                    (deviation: +99.7)</p>
                 <p><strong>Features Changed:</strong> 17 / 236</p>
-                <p><strong>Solve Time:</strong> 0.461s</p>
+                <p><strong>Iterations:</strong> <span class="iterations-badge">9 iterations</span></p>
+                <p><strong>Total Solve Time:</strong> <span style="font-family: 'Courier New', monospace; font-size: 15px; font-weight: bold; color: #2c3e50;">0.448s</span></p>
+                <div class="timing-visual">
+                    <strong style="font-size: 15px;">⏱ Timing Breakdown</strong>
+                    <div class="timing-row">
+                        <div class="timing-label">Model Build</div>
+                        <div class="timing-bar-container">
+                            <div class="timing-bar-fill" style="width: 0.7940269490264137%; background-color: #3498db;">
+                                0.8%
+                            </div>
+                        </div>
+                        <div class="timing-value">0.003s</div>
+                    </div>
+                    <div class="timing-row">
+                        <div class="timing-label">Interior Search</div>
+                        <div class="timing-bar-container">
+                            <div class="timing-bar-fill" style="width: 0.0%; background-color: #9b59b6;">
+                                0.0%
+                            </div>
+                        </div>
+                        <div class="timing-value">0.0s</div>
+                    </div>
+                    <div class="timing-row">
+                        <div class="timing-label">MILP Solving</div>
+                        <div class="timing-bar-container">
+                            <div class="timing-bar-fill" style="width: 100.0%; background-color: #e74c3c;">
+                                96.9%
+                            </div>
+                        </div>
+                        <div class="timing-value">0.434s</div>
+                    </div>
+                    <div class="timing-row">
+                        <div class="timing-label">NN Evaluations</div>
+                        <div class="timing-bar-container">
+                            <div class="timing-bar-fill" style="width: 1.8691871081832887%; background-color: #f39c12;">
+                                1.8%
+                            </div>
+                        </div>
+                        <div class="timing-value">0.008s</div>
+                    </div>
+                    <div class="timing-row">
+                        <div class="timing-label">Cut Generation</div>
+                        <div class="timing-bar-container">
+                            <div class="timing-bar-fill" style="width: 0.156795334034473%; background-color: #2ecc71;">
+                                0.2%
+                            </div>
+                        </div>
+                        <div class="timing-value">0.001s</div>
+                    </div>
+                    <div style="margin-top: 10px; padding-top: 10px; border-top: 2px solid #dee2e6;">
+                        <strong>Total:</strong> 0.448s
+                    </div>
+                </div>
                 <table class="features-table">
                     <thead>
                         <tr>
@@ -3573,7 +5276,68 @@
                 <p><strong>Counterfactual Cost:</strong> 49937 
                    (deviation: +99.7)</p>
                 <p><strong>Features Changed:</strong> 17 / 236</p>
-                <p><strong>Solve Time:</strong> 0.651s</p>
+                <p><strong>Iterations:</strong> <span class="iterations-badge">11 iterations</span></p>
+                <p><strong>Total Solve Time:</strong> <span style="font-family: 'Courier New', monospace; font-size: 15px; font-weight: bold; color: #2c3e50;">0.611s</span></p>
+                <div class="timing-visual">
+                    <strong style="font-size: 15px;">⏱ Timing Breakdown</strong>
+                    <div class="timing-row">
+                        <div class="timing-label">Model Build</div>
+                        <div class="timing-bar-container">
+                            <div class="timing-bar-fill" style="width: 0.6037161868352067%; background-color: #3498db;">
+                                0.5%
+                            </div>
+                        </div>
+                        <div class="timing-value">0.003s</div>
+                    </div>
+                    <div class="timing-row">
+                        <div class="timing-label">Interior Search</div>
+                        <div class="timing-bar-container">
+                            <div class="timing-bar-fill" style="width: 0.641520551908233%; background-color: #9b59b6;">
+                                0.6%
+                            </div>
+                        </div>
+                        <div class="timing-value">0.003s</div>
+                    </div>
+                    <div class="timing-row">
+                        <div class="timing-label">MILP Solving</div>
+                        <div class="timing-bar-container">
+                            <div class="timing-bar-fill" style="width: 100.0%; background-color: #e74c3c;">
+                                87.9%
+                            </div>
+                        </div>
+                        <div class="timing-value">0.537s</div>
+                    </div>
+                    <div class="timing-row">
+                        <div class="timing-label">NN Evaluations</div>
+                        <div class="timing-bar-container">
+                            <div class="timing-bar-fill" style="width: 1.8442051942842639%; background-color: #f39c12;">
+                                1.6%
+                            </div>
+                        </div>
+                        <div class="timing-value">0.01s</div>
+                    </div>
+                    <div class="timing-row">
+                        <div class="timing-label">Cut Generation</div>
+                        <div class="timing-bar-container">
+                            <div class="timing-bar-fill" style="width: 10.238194122752372%; background-color: #2ecc71;">
+                                9.0%
+                            </div>
+                        </div>
+                        <div class="timing-value">0.055s</div>
+                    </div>
+                    <div class="timing-row">
+                        <div class="timing-label">  └─ Bisection</div>
+                        <div class="timing-bar-container">
+                            <div class="timing-bar-fill" style="width: 8.938425031104295%; background-color: #16a085;">
+                                7.9%
+                            </div>
+                        </div>
+                        <div class="timing-value">0.048s</div>
+                    </div>
+                    <div style="margin-top: 10px; padding-top: 10px; border-top: 2px solid #dee2e6;">
+                        <strong>Total:</strong> 0.611s
+                    </div>
+                </div>
                 <table class="features-table">
                     <thead>
                         <tr>
@@ -3700,7 +5464,41 @@
                 <p><strong>Counterfactual Cost:</strong> 49937 
                    (deviation: +99.7)</p>
                 <p><strong>Features Changed:</strong> 17 / 236</p>
-                <p><strong>Solve Time:</strong> 1.27s</p>
+                <p><strong>Iterations:</strong> <span class="iterations-badge">1 iterations</span></p>
+                <p><strong>Total Solve Time:</strong> <span style="font-family: 'Courier New', monospace; font-size: 15px; font-weight: bold; color: #2c3e50;">1.335s</span></p>
+                <div class="timing-visual">
+                    <strong style="font-size: 15px;">⏱ Timing Breakdown</strong>
+                    <div class="timing-row">
+                        <div class="timing-label">Model Build</div>
+                        <div class="timing-bar-container">
+                            <div class="timing-bar-fill" style="width: 5.196343491991078%; background-color: #3498db;">
+                                4.9%
+                            </div>
+                        </div>
+                        <div class="timing-value">0.066s</div>
+                    </div>
+                    <div class="timing-row">
+                        <div class="timing-label">MIP Solve</div>
+                        <div class="timing-bar-container">
+                            <div class="timing-bar-fill" style="width: 100.0%; background-color: #e74c3c;">
+                                95.0%
+                            </div>
+                        </div>
+                        <div class="timing-value">1.269s</div>
+                    </div>
+                    <div class="timing-row">
+                        <div class="timing-label">Result Extraction</div>
+                        <div class="timing-bar-container">
+                            <div class="timing-bar-fill" style="width: 0.009131687387392297%; background-color: #2ecc71;">
+                                0.0%
+                            </div>
+                        </div>
+                        <div class="timing-value">0.0s</div>
+                    </div>
+                    <div style="margin-top: 10px; padding-top: 10px; border-top: 2px solid #dee2e6;">
+                        <strong>Total:</strong> 1.335s
+                    </div>
+                </div>
                 <table class="features-table">
                     <thead>
                         <tr>
@@ -3845,7 +5643,59 @@
                 <p><strong>Counterfactual Cost:</strong> 47816 
                    (deviation: +95.4)</p>
                 <p><strong>Features Changed:</strong> 18 / 236</p>
-                <p><strong>Solve Time:</strong> 1.775s</p>
+                <p><strong>Iterations:</strong> <span class="iterations-badge">20 iterations</span></p>
+                <p><strong>Total Solve Time:</strong> <span style="font-family: 'Courier New', monospace; font-size: 15px; font-weight: bold; color: #2c3e50;">1.58s</span></p>
+                <div class="timing-visual">
+                    <strong style="font-size: 15px;">⏱ Timing Breakdown</strong>
+                    <div class="timing-row">
+                        <div class="timing-label">Model Build</div>
+                        <div class="timing-bar-container">
+                            <div class="timing-bar-fill" style="width: 0.22353953988085776%; background-color: #3498db;">
+                                0.2%
+                            </div>
+                        </div>
+                        <div class="timing-value">0.003s</div>
+                    </div>
+                    <div class="timing-row">
+                        <div class="timing-label">Interior Search</div>
+                        <div class="timing-bar-container">
+                            <div class="timing-bar-fill" style="width: 0.0%; background-color: #9b59b6;">
+                                0.0%
+                            </div>
+                        </div>
+                        <div class="timing-value">0.0s</div>
+                    </div>
+                    <div class="timing-row">
+                        <div class="timing-label">MILP Solving</div>
+                        <div class="timing-bar-container">
+                            <div class="timing-bar-fill" style="width: 100.0%; background-color: #e74c3c;">
+                                98.3%
+                            </div>
+                        </div>
+                        <div class="timing-value">1.552s</div>
+                    </div>
+                    <div class="timing-row">
+                        <div class="timing-label">NN Evaluations</div>
+                        <div class="timing-bar-container">
+                            <div class="timing-bar-fill" style="width: 1.1903165632600463%; background-color: #f39c12;">
+                                1.2%
+                            </div>
+                        </div>
+                        <div class="timing-value">0.018s</div>
+                    </div>
+                    <div class="timing-row">
+                        <div class="timing-label">Cut Generation</div>
+                        <div class="timing-bar-container">
+                            <div class="timing-bar-fill" style="width: 0.10088001222601853%; background-color: #2ecc71;">
+                                0.1%
+                            </div>
+                        </div>
+                        <div class="timing-value">0.002s</div>
+                    </div>
+                    <div style="margin-top: 10px; padding-top: 10px; border-top: 2px solid #dee2e6;">
+                        <strong>Total:</strong> 1.58s
+                    </div>
+                </div>
                 <table class="features-table">
                     <thead>
                         <tr>
@@ -3972,7 +5822,68 @@
                 <p><strong>Counterfactual Cost:</strong> 47816 
                    (deviation: +95.4)</p>
                 <p><strong>Features Changed:</strong> 18 / 236</p>
-                <p><strong>Solve Time:</strong> 1.399s</p>
+                <p><strong>Iterations:</strong> <span class="iterations-badge">17 iterations</span></p>
+                <p><strong>Total Solve Time:</strong> <span style="font-family: 'Courier New', monospace; font-size: 15px; font-weight: bold; color: #2c3e50;">1.186s</span></p>
+                <div class="timing-visual">
+                    <strong style="font-size: 15px;">⏱ Timing Breakdown</strong>
+                    <div class="timing-row">
+                        <div class="timing-label">Model Build</div>
+                        <div class="timing-bar-container">
+                            <div class="timing-bar-fill" style="width: 0.3052269615812441%; background-color: #3498db;">
+                                0.3%
+                            </div>
+                        </div>
+                        <div class="timing-value">0.003s</div>
+                    </div>
+                    <div class="timing-row">
+                        <div class="timing-label">Interior Search</div>
+                        <div class="timing-bar-container">
+                            <div class="timing-bar-fill" style="width: 0.32338727503493914%; background-color: #9b59b6;">
+                                0.3%
+                            </div>
+                        </div>
+                        <div class="timing-value">0.003s</div>
+                    </div>
+                    <div class="timing-row">
+                        <div class="timing-label">MILP Solving</div>
+                        <div class="timing-bar-container">
+                            <div class="timing-bar-fill" style="width: 100.0%; background-color: #e74c3c;">
+                                90.2%
+                            </div>
+                        </div>
+                        <div class="timing-value">1.07s</div>
+                    </div>
+                    <div class="timing-row">
+                        <div class="timing-label">NN Evaluations</div>
+                        <div class="timing-bar-container">
+                            <div class="timing-bar-fill" style="width: 1.4054745657568237%; background-color: #f39c12;">
+                                1.3%
+                            </div>
+                        </div>
+                        <div class="timing-value">0.015s</div>
+                    </div>
+                    <div class="timing-row">
+                        <div class="timing-label">Cut Generation</div>
+                        <div class="timing-bar-container">
+                            <div class="timing-bar-fill" style="width: 8.520083746898264%; background-color: #2ecc71;">
+                                7.7%
+                            </div>
+                        </div>
+                        <div class="timing-value">0.091s</div>
+                    </div>
+                    <div class="timing-row">
+                        <div class="timing-label">  └─ Bisection</div>
+                        <div class="timing-bar-container">
+                            <div class="timing-bar-fill" style="width: 7.44575079860814%; background-color: #16a085;">
+                                6.7%
+                            </div>
+                        </div>
+                        <div class="timing-value">0.08s</div>
+                    </div>
+                    <div style="margin-top: 10px; padding-top: 10px; border-top: 2px solid #dee2e6;">
+                        <strong>Total:</strong> 1.186s
+                    </div>
+                </div>
                 <table class="features-table">
                     <thead>
                         <tr>
@@ -4099,7 +6010,41 @@
                 <p><strong>Counterfactual Cost:</strong> 47816 
                    (deviation: +95.4)</p>
                 <p><strong>Features Changed:</strong> 18 / 236</p>
-                <p><strong>Solve Time:</strong> 1.588s</p>
+                <p><strong>Iterations:</strong> <span class="iterations-badge">1 iterations</span></p>
+                <p><strong>Total Solve Time:</strong> <span style="font-family: 'Courier New', monospace; font-size: 15px; font-weight: bold; color: #2c3e50;">1.449s</span></p>
+                <div class="timing-visual">
+                    <strong style="font-size: 15px;">⏱ Timing Breakdown</strong>
+                    <div class="timing-row">
+                        <div class="timing-label">Model Build</div>
+                        <div class="timing-bar-container">
+                            <div class="timing-bar-fill" style="width: 4.381406890957616%; background-color: #3498db;">
+                                4.2%
+                            </div>
+                        </div>
+                        <div class="timing-value">0.061s</div>
+                    </div>
+                    <div class="timing-row">
+                        <div class="timing-label">MIP Solve</div>
+                        <div class="timing-bar-container">
+                            <div class="timing-bar-fill" style="width: 100.0%; background-color: #e74c3c;">
+                                95.8%
+                            </div>
+                        </div>
+                        <div class="timing-value">1.387s</div>
+                    </div>
+                    <div class="timing-row">
+                        <div class="timing-label">Result Extraction</div>
+                        <div class="timing-bar-container">
+                            <div class="timing-bar-fill" style="width: 0.01527772288032336%; background-color: #2ecc71;">
+                                0.0%
+                            </div>
+                        </div>
+                        <div class="timing-value">0.0s</div>
+                    </div>
+                    <div style="margin-top: 10px; padding-top: 10px; border-top: 2px solid #dee2e6;">
+                        <strong>Total:</strong> 1.449s
+                    </div>
+                </div>
                 <table class="features-table">
                     <thead>
                         <tr>
@@ -4244,7 +6189,59 @@
                 <p><strong>Counterfactual Cost:</strong> 48519 
                    (deviation: +96.8)</p>
                 <p><strong>Features Changed:</strong> 17 / 236</p>
-                <p><strong>Solve Time:</strong> 0.544s</p>
+                <p><strong>Iterations:</strong> <span class="iterations-badge">12 iterations</span></p>
+                <p><strong>Total Solve Time:</strong> <span style="font-family: 'Courier New', monospace; font-size: 15px; font-weight: bold; color: #2c3e50;">0.538s</span></p>
+                <div class="timing-visual">
+                    <strong style="font-size: 15px;">⏱ Timing Breakdown</strong>
+                    <div class="timing-row">
+                        <div class="timing-label">Model Build</div>
+                        <div class="timing-bar-container">
+                            <div class="timing-bar-fill" style="width: 1.0488349527529213%; background-color: #3498db;">
+                                1.0%
+                            </div>
+                        </div>
+                        <div class="timing-value">0.005s</div>
+                    </div>
+                    <div class="timing-row">
+                        <div class="timing-label">Interior Search</div>
+                        <div class="timing-bar-container">
+                            <div class="timing-bar-fill" style="width: 0.0%; background-color: #9b59b6;">
+                                0.0%
+                            </div>
+                        </div>
+                        <div class="timing-value">0.0s</div>
+                    </div>
+                    <div class="timing-row">
+                        <div class="timing-label">MILP Solving</div>
+                        <div class="timing-bar-container">
+                            <div class="timing-bar-fill" style="width: 100.0%; background-color: #e74c3c;">
+                                96.3%
+                            </div>
+                        </div>
+                        <div class="timing-value">0.518s</div>
+                    </div>
+                    <div class="timing-row">
+                        <div class="timing-label">NN Evaluations</div>
+                        <div class="timing-bar-container">
+                            <div class="timing-bar-fill" style="width: 2.219017001027421%; background-color: #f39c12;">
+                                2.1%
+                            </div>
+                        </div>
+                        <div class="timing-value">0.011s</div>
+                    </div>
+                    <div class="timing-row">
+                        <div class="timing-label">Cut Generation</div>
+                        <div class="timing-bar-container">
+                            <div class="timing-bar-fill" style="width: 0.18264234566929025%; background-color: #2ecc71;">
+                                0.2%
+                            </div>
+                        </div>
+                        <div class="timing-value">0.001s</div>
+                    </div>
+                    <div style="margin-top: 10px; padding-top: 10px; border-top: 2px solid #dee2e6;">
+                        <strong>Total:</strong> 0.538s
+                    </div>
+                </div>
                 <table class="features-table">
                     <thead>
                         <tr>
@@ -4371,7 +6368,68 @@
                 <p><strong>Counterfactual Cost:</strong> 48519 
                    (deviation: +96.8)</p>
                 <p><strong>Features Changed:</strong> 17 / 236</p>
-                <p><strong>Solve Time:</strong> 0.692s</p>
+                <p><strong>Iterations:</strong> <span class="iterations-badge">12 iterations</span></p>
+                <p><strong>Total Solve Time:</strong> <span style="font-family: 'Courier New', monospace; font-size: 15px; font-weight: bold; color: #2c3e50;">0.752s</span></p>
+                <div class="timing-visual">
+                    <strong style="font-size: 15px;">⏱ Timing Breakdown</strong>
+                    <div class="timing-row">
+                        <div class="timing-label">Model Build</div>
+                        <div class="timing-bar-container">
+                            <div class="timing-bar-fill" style="width: 1.1688194289530125%; background-color: #3498db;">
+                                1.0%
+                            </div>
+                        </div>
+                        <div class="timing-value">0.008s</div>
+                    </div>
+                    <div class="timing-row">
+                        <div class="timing-label">Interior Search</div>
+                        <div class="timing-bar-container">
+                            <div class="timing-bar-fill" style="width: 0.55739994721978%; background-color: #9b59b6;">
+                                0.5%
+                            </div>
+                        </div>
+                        <div class="timing-value">0.004s</div>
+                    </div>
+                    <div class="timing-row">
+                        <div class="timing-label">MILP Solving</div>
+                        <div class="timing-bar-container">
+                            <div class="timing-bar-fill" style="width: 100.0%; background-color: #e74c3c;">
+                                87.0%
+                            </div>
+                        </div>
+                        <div class="timing-value">0.654s</div>
+                    </div>
+                    <div class="timing-row">
+                        <div class="timing-label">NN Evaluations</div>
+                        <div class="timing-bar-container">
+                            <div class="timing-bar-fill" style="width: 1.9338774653247077%; background-color: #f39c12;">
+                                1.7%
+                            </div>
+                        </div>
+                        <div class="timing-value">0.013s</div>
+                    </div>
+                    <div class="timing-row">
+                        <div class="timing-label">Cut Generation</div>
+                        <div class="timing-bar-container">
+                            <div class="timing-bar-fill" style="width: 10.813165311439748%; background-color: #2ecc71;">
+                                9.4%
+                            </div>
+                        </div>
+                        <div class="timing-value">0.071s</div>
+                    </div>
+                    <div class="timing-row">
+                        <div class="timing-label">  └─ Bisection</div>
+                        <div class="timing-bar-container">
+                            <div class="timing-bar-fill" style="width: 9.452106324440887%; background-color: #16a085;">
+                                8.2%
+                            </div>
+                        </div>
+                        <div class="timing-value">0.062s</div>
+                    </div>
+                    <div style="margin-top: 10px; padding-top: 10px; border-top: 2px solid #dee2e6;">
+                        <strong>Total:</strong> 0.752s
+                    </div>
+                </div>
                 <table class="features-table">
                     <thead>
                         <tr>
@@ -4498,7 +6556,41 @@
                 <p><strong>Counterfactual Cost:</strong> 48519 
                    (deviation: +96.9)</p>
                 <p><strong>Features Changed:</strong> 17 / 236</p>
-                <p><strong>Solve Time:</strong> 1.171s</p>
+                <p><strong>Iterations:</strong> <span class="iterations-badge">1 iterations</span></p>
+                <p><strong>Total Solve Time:</strong> <span style="font-family: 'Courier New', monospace; font-size: 15px; font-weight: bold; color: #2c3e50;">1.071s</span></p>
+                <div class="timing-visual">
+                    <strong style="font-size: 15px;">⏱ Timing Breakdown</strong>
+                    <div class="timing-row">
+                        <div class="timing-label">Model Build</div>
+                        <div class="timing-bar-container">
+                            <div class="timing-bar-fill" style="width: 7.326605175250059%; background-color: #3498db;">
+                                6.8%
+                            </div>
+                        </div>
+                        <div class="timing-value">0.073s</div>
+                    </div>
+                    <div class="timing-row">
+                        <div class="timing-label">MIP Solve</div>
+                        <div class="timing-bar-container">
+                            <div class="timing-bar-fill" style="width: 100.0%; background-color: #e74c3c;">
+                                93.1%
+                            </div>
+                        </div>
+                        <div class="timing-value">0.998s</div>
+                    </div>
+                    <div class="timing-row">
+                        <div class="timing-label">Result Extraction</div>
+                        <div class="timing-bar-container">
+                            <div class="timing-bar-fill" style="width: 0.011734881541031335%; background-color: #2ecc71;">
+                                0.0%
+                            </div>
+                        </div>
+                        <div class="timing-value">0.0s</div>
+                    </div>
+                    <div style="margin-top: 10px; padding-top: 10px; border-top: 2px solid #dee2e6;">
+                        <strong>Total:</strong> 1.071s
+                    </div>
+                </div>
                 <table class="features-table">
                     <thead>
                         <tr>
@@ -4644,7 +6736,59 @@
                 <p><strong>Counterfactual Cost:</strong> 39950 
                    (deviation: +79.7)</p>
                 <p><strong>Features Changed:</strong> 24 / 236</p>
-                <p><strong>Solve Time:</strong> 3.784s</p>
+                <p><strong>Iterations:</strong> <span class="iterations-badge">40 iterations</span></p>
+                <p><strong>Total Solve Time:</strong> <span style="font-family: 'Courier New', monospace; font-size: 15px; font-weight: bold; color: #2c3e50;">3.672s</span></p>
+                <div class="timing-visual">
+                    <strong style="font-size: 15px;">⏱ Timing Breakdown</strong>
+                    <div class="timing-row">
+                        <div class="timing-label">Model Build</div>
+                        <div class="timing-bar-container">
+                            <div class="timing-bar-fill" style="width: 0.09097037348977849%; background-color: #3498db;">
+                                0.1%
+                            </div>
+                        </div>
+                        <div class="timing-value">0.003s</div>
+                    </div>
+                    <div class="timing-row">
+                        <div class="timing-label">Interior Search</div>
+                        <div class="timing-bar-container">
+                            <div class="timing-bar-fill" style="width: 0.0%; background-color: #9b59b6;">
+                                0.0%
+                            </div>
+                        </div>
+                        <div class="timing-value">0.0s</div>
+                    </div>
+                    <div class="timing-row">
+                        <div class="timing-label">MILP Solving</div>
+                        <div class="timing-bar-container">
+                            <div class="timing-bar-fill" style="width: 100.0%; background-color: #e74c3c;">
+                                98.5%
+                            </div>
+                        </div>
+                        <div class="timing-value">3.619s</div>
+                    </div>
+                    <div class="timing-row">
+                        <div class="timing-label">NN Evaluations</div>
+                        <div class="timing-bar-container">
+                            <div class="timing-bar-fill" style="width: 0.9713828076535282%; background-color: #f39c12;">
+                                1.0%
+                            </div>
+                        </div>
+                        <div class="timing-value">0.035s</div>
+                    </div>
+                    <div class="timing-row">
+                        <div class="timing-label">Cut Generation</div>
+                        <div class="timing-bar-container">
+                            <div class="timing-bar-fill" style="width: 0.20689039967406675%; background-color: #2ecc71;">
+                                0.2%
+                            </div>
+                        </div>
+                        <div class="timing-value">0.007s</div>
+                    </div>
+                    <div style="margin-top: 10px; padding-top: 10px; border-top: 2px solid #dee2e6;">
+                        <strong>Total:</strong> 3.672s
+                    </div>
+                </div>
                 <table class="features-table">
                     <thead>
                         <tr>
@@ -4771,7 +6915,68 @@
                 <p><strong>Counterfactual Cost:</strong> 39950 
                    (deviation: +79.7)</p>
                 <p><strong>Features Changed:</strong> 24 / 236</p>
-                <p><strong>Solve Time:</strong> 4.188s</p>
+                <p><strong>Iterations:</strong> <span class="iterations-badge">40 iterations</span></p>
+                <p><strong>Total Solve Time:</strong> <span style="font-family: 'Courier New', monospace; font-size: 15px; font-weight: bold; color: #2c3e50;">3.972s</span></p>
+                <div class="timing-visual">
+                    <strong style="font-size: 15px;">⏱ Timing Breakdown</strong>
+                    <div class="timing-row">
+                        <div class="timing-label">Model Build</div>
+                        <div class="timing-bar-container">
+                            <div class="timing-bar-fill" style="width: 0.08135702824152197%; background-color: #3498db;">
+                                0.1%
+                            </div>
+                        </div>
+                        <div class="timing-value">0.003s</div>
+                    </div>
+                    <div class="timing-row">
+                        <div class="timing-label">Interior Search</div>
+                        <div class="timing-bar-container">
+                            <div class="timing-bar-fill" style="width: 0.08078103782600249%; background-color: #9b59b6;">
+                                0.1%
+                            </div>
+                        </div>
+                        <div class="timing-value">0.003s</div>
+                    </div>
+                    <div class="timing-row">
+                        <div class="timing-label">MILP Solving</div>
+                        <div class="timing-bar-container">
+                            <div class="timing-bar-fill" style="width: 100.0%; background-color: #e74c3c;">
+                                92.8%
+                            </div>
+                        </div>
+                        <div class="timing-value">3.684s</div>
+                    </div>
+                    <div class="timing-row">
+                        <div class="timing-label">NN Evaluations</div>
+                        <div class="timing-bar-container">
+                            <div class="timing-bar-fill" style="width: 0.9541248874068174%; background-color: #f39c12;">
+                                0.9%
+                            </div>
+                        </div>
+                        <div class="timing-value">0.035s</div>
+                    </div>
+                    <div class="timing-row">
+                        <div class="timing-label">Cut Generation</div>
+                        <div class="timing-bar-container">
+                            <div class="timing-bar-fill" style="width: 6.490467099751056%; background-color: #2ecc71;">
+                                6.0%
+                            </div>
+                        </div>
+                        <div class="timing-value">0.239s</div>
+                    </div>
+                    <div class="timing-row">
+                        <div class="timing-label">  └─ Bisection</div>
+                        <div class="timing-bar-container">
+                            <div class="timing-bar-fill" style="width: 5.7303474335355595%; background-color: #16a085;">
+                                5.3%
+                            </div>
+                        </div>
+                        <div class="timing-value">0.211s</div>
+                    </div>
+                    <div style="margin-top: 10px; padding-top: 10px; border-top: 2px solid #dee2e6;">
+                        <strong>Total:</strong> 3.972s
+                    </div>
+                </div>
                 <table class="features-table">
                     <thead>
                         <tr>
@@ -4898,7 +7103,41 @@
                 <p><strong>Counterfactual Cost:</strong> 39950 
                    (deviation: +79.7)</p>
                 <p><strong>Features Changed:</strong> 24 / 236</p>
-                <p><strong>Solve Time:</strong> 1.037s</p>
+                <p><strong>Iterations:</strong> <span class="iterations-badge">1 iterations</span></p>
+                <p><strong>Total Solve Time:</strong> <span style="font-family: 'Courier New', monospace; font-size: 15px; font-weight: bold; color: #2c3e50;">1.093s</span></p>
+                <div class="timing-visual">
+                    <strong style="font-size: 15px;">⏱ Timing Breakdown</strong>
+                    <div class="timing-row">
+                        <div class="timing-label">Model Build</div>
+                        <div class="timing-bar-container">
+                            <div class="timing-bar-fill" style="width: 5.839538602760762%; background-color: #3498db;">
+                                5.5%
+                            </div>
+                        </div>
+                        <div class="timing-value">0.06s</div>
+                    </div>
+                    <div class="timing-row">
+                        <div class="timing-label">MIP Solve</div>
+                        <div class="timing-bar-container">
+                            <div class="timing-bar-fill" style="width: 100.0%; background-color: #e74c3c;">
+                                94.4%
+                            </div>
+                        </div>
+                        <div class="timing-value">1.032s</div>
+                    </div>
+                    <div class="timing-row">
+                        <div class="timing-label">Result Extraction</div>
+                        <div class="timing-bar-container">
+                            <div class="timing-bar-fill" style="width: 0.01085368881088602%; background-color: #2ecc71;">
+                                0.0%
+                            </div>
+                        </div>
+                        <div class="timing-value">0.0s</div>
+                    </div>
+                    <div style="margin-top: 10px; padding-top: 10px; border-top: 2px solid #dee2e6;">
+                        <strong>Total:</strong> 1.093s
+                    </div>
+                </div>
                 <table class="features-table">
                     <thead>
                         <tr>
@@ -5053,7 +7292,41 @@
                 <p><strong>Counterfactual Cost:</strong> 38252 
                    (deviation: +76.4)</p>
                 <p><strong>Features Changed:</strong> 25 / 236</p>
-                <p><strong>Solve Time:</strong> 1.529s</p>
+                <p><strong>Iterations:</strong> <span class="iterations-badge">1 iterations</span></p>
+                <p><strong>Total Solve Time:</strong> <span style="font-family: 'Courier New', monospace; font-size: 15px; font-weight: bold; color: #2c3e50;">1.579s</span></p>
+                <div class="timing-visual">
+                    <strong style="font-size: 15px;">⏱ Timing Breakdown</strong>
+                    <div class="timing-row">
+                        <div class="timing-label">Model Build</div>
+                        <div class="timing-bar-container">
+                            <div class="timing-bar-fill" style="width: 4.577701118130992%; background-color: #3498db;">
+                                4.4%
+                            </div>
+                        </div>
+                        <div class="timing-value">0.069s</div>
+                    </div>
+                    <div class="timing-row">
+                        <div class="timing-label">MIP Solve</div>
+                        <div class="timing-bar-container">
+                            <div class="timing-bar-fill" style="width: 100.0%; background-color: #e74c3c;">
+                                95.6%
+                            </div>
+                        </div>
+                        <div class="timing-value">1.51s</div>
+                    </div>
+                    <div class="timing-row">
+                        <div class="timing-label">Result Extraction</div>
+                        <div class="timing-bar-container">
+                            <div class="timing-bar-fill" style="width: 0.007422411323504376%; background-color: #2ecc71;">
+                                0.0%
+                            </div>
+                        </div>
+                        <div class="timing-value">0.0s</div>
+                    </div>
+                    <div style="margin-top: 10px; padding-top: 10px; border-top: 2px solid #dee2e6;">
+                        <strong>Total:</strong> 1.579s
+                    </div>
+                </div>
                 <table class="features-table">
                     <thead>
                         <tr>
@@ -5208,7 +7481,41 @@
                 <p><strong>Counterfactual Cost:</strong> 38815 
                    (deviation: +77.5)</p>
                 <p><strong>Features Changed:</strong> 23 / 236</p>
-                <p><strong>Solve Time:</strong> 1.35s</p>
+                <p><strong>Iterations:</strong> <span class="iterations-badge">1 iterations</span></p>
+                <p><strong>Total Solve Time:</strong> <span style="font-family: 'Courier New', monospace; font-size: 15px; font-weight: bold; color: #2c3e50;">1.87s</span></p>
+                <div class="timing-visual">
+                    <strong style="font-size: 15px;">⏱ Timing Breakdown</strong>
+                    <div class="timing-row">
+                        <div class="timing-label">Model Build</div>
+                        <div class="timing-bar-container">
+                            <div class="timing-bar-fill" style="width: 25.936445156616113%; background-color: #3498db;">
+                                20.6%
+                            </div>
+                        </div>
+                        <div class="timing-value">0.385s</div>
+                    </div>
+                    <div class="timing-row">
+                        <div class="timing-label">MIP Solve</div>
+                        <div class="timing-bar-container">
+                            <div class="timing-bar-fill" style="width: 100.0%; background-color: #e74c3c;">
+                                79.4%
+                            </div>
+                        </div>
+                        <div class="timing-value">1.484s</div>
+                    </div>
+                    <div class="timing-row">
+                        <div class="timing-label">Result Extraction</div>
+                        <div class="timing-bar-container">
+                            <div class="timing-bar-fill" style="width: 0.00780554993873607%; background-color: #2ecc71;">
+                                0.0%
+                            </div>
+                        </div>
+                        <div class="timing-value">0.0s</div>
+                    </div>
+                    <div style="margin-top: 10px; padding-top: 10px; border-top: 2px solid #dee2e6;">
+                        <strong>Total:</strong> 1.87s
+                    </div>
+                </div>
                 <table class="features-table">
                     <thead>
                         <tr>
@@ -5341,7 +7648,7 @@
         </div>
 
         <p class="note" style="text-align: center; margin-top: 30px;">
-            Generated on 2025-11-13 18:10:27
+            Generated on 2025-11-20 13:34:07
         </p>
     </div>
 </body>

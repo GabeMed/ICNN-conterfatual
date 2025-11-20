@@ -999,6 +999,10 @@ function generate_counterfactual_oa(
         println()
     end
 
+    # FIX #1: Start timing BEFORE any preprocessing
+    # This ensures solve_time includes all algorithm overhead
+    start_time = time()
+
     # Check if already at target (depends on constraint type)
     already_satisfied = y_current <= y_target + epsilon
 
@@ -1006,6 +1010,7 @@ function generate_counterfactual_oa(
         if verbose
             println("✓ Already satisfies target constraint!")
         end
+        early_exit_time = time() - start_time
         return Dict(
             :status => :already_at_target,
             :counterfactual => x_factual,
@@ -1014,17 +1019,34 @@ function generate_counterfactual_oa(
             :num_changed => 0,
             :changed_indices => Int[],
             :iterations => 0,
-            :solve_time => 0.0,
+            :solve_time => early_exit_time,
             :upper_bound => 0.0,
-            :iteration_history => []
+            :iteration_history => [],
+            :timing_breakdown => Dict(
+                :total => early_exit_time,
+                :model_build => 0.0,
+                :interior_point_search => 0.0,
+                :total_milp_solve => 0.0,
+                :total_nn_eval => 0.0,
+                :total_cut_generation => 0.0,
+                :total_bisection => 0.0
+            )
         )
     end
 
-    # FIX #1: Start timing BEFORE any preprocessing
-    # This ensures solve_time includes all algorithm overhead
-    start_time = time()
-
+    # Initialize timing breakdown FIRST
+    timing_breakdown = Dict(
+        :total => 0.0,
+        :model_build => 0.0,
+        :interior_point_search => 0.0,
+        :total_milp_solve => 0.0,
+        :total_nn_eval => 0.0,
+        :total_cut_generation => 0.0,
+        :total_bisection => 0.0
+    )
+    
     # Build master problem
+    model_build_start = time()
     if verbose
         println("Building master MILP...")
     end
@@ -1045,10 +1067,14 @@ function generate_counterfactual_oa(
     if verbose
         println("✓ Master problem built with initial cut")
     end
+    
+    timing_breakdown[:model_build] = time() - model_build_start
 
     # FIX: For ESH, find interior point BEFORE main loop
     # This enables ESH cuts from iteration 1 instead of waiting until first feasible
     x_interior_point = nothing
+    interior_search_start = time()
+    
     if cut_strategy == :esh
         if verbose
             println()
@@ -1110,6 +1136,8 @@ function generate_counterfactual_oa(
             end
         end
     end
+    
+    timing_breakdown[:interior_point_search] = time() - interior_search_start
 
     if verbose
         println()
@@ -1130,19 +1158,18 @@ function generate_counterfactual_oa(
     # Track cut types for diagnostics
     ecp_cut_count = 0
     esh_cut_count = 0
-    
-    # Note: x_interior_point is already initialized above based on cut_strategy
-    # Note: start_time is initialized BEFORE interior point search (see FIX #1 above)
 
     # Main OA loop
     for iter in 1:max_iterations
         # Step 1: Solve master MILP
+        iter_milp_start = time()
         set_time_limit_sec(master_model, time_limit_per_iter)
         set_silent(master_model)  # Suppress Gurobi output unless explicitly enabled
         optimize!(master_model)
 
         status = termination_status(master_model)
         master_solve_time = JuMP.solve_time(master_model)
+        timing_breakdown[:total_milp_solve] += time() - iter_milp_start
 
         # Check termination status
         if status == MOI.INFEASIBLE || status == MOI.INFEASIBLE_OR_UNBOUNDED
@@ -1151,6 +1178,7 @@ function generate_counterfactual_oa(
             end
 
             solve_time = time() - start_time
+            timing_breakdown[:total] = solve_time
             return Dict(
                 :status => :infeasible,
                 :counterfactual => nothing,
@@ -1163,7 +1191,8 @@ function generate_counterfactual_oa(
                 :upper_bound => UB,
                 :iteration_history => iteration_history,
                 :ecp_cuts => ecp_cut_count,
-                :esh_cuts => esh_cut_count
+                :esh_cuts => esh_cut_count,
+                :timing_breakdown => timing_breakdown
             )
         end
 
@@ -1179,7 +1208,9 @@ function generate_counterfactual_oa(
         obj_k = objective_value(master_model)
 
         # Step 3: Evaluate neural network at x_k
+        iter_nn_start = time()
         f_k, grad_k = evaluate_ficnn_with_gradient(icnn_model, x_k)
+        timing_breakdown[:total_nn_eval] += time() - iter_nn_start
 
         # Step 4: Check feasibility w.r.t. target
         # Add small numerical tolerance to avoid floating-point issues
@@ -1228,6 +1259,7 @@ function generate_counterfactual_oa(
         bisection_info = nothing
         
 
+        iter_cut_start = time()
         if use_esh && !feasible
             # ESH Strategy: Find boundary point between interior and infeasible points
             # This generates tighter supporting hyperplane cuts
@@ -1243,6 +1275,7 @@ function generate_counterfactual_oa(
                 tolerance=1e-5
             )
             bisection_time = time() - bisection_start
+            timing_breakdown[:total_bisection] += bisection_time
 
             # Evaluate at boundary point
             f_boundary, grad_boundary = evaluate_ficnn_with_gradient(icnn_model, x_boundary)
@@ -1289,6 +1322,7 @@ function generate_counterfactual_oa(
             # Increment ECP cut counter
             ecp_cut_count += 1
         end
+        timing_breakdown[:total_cut_generation] += time() - iter_cut_start
         
         # Calculate cut quality metrics
         num_cons = JuMP.num_constraints(master_model; count_variable_in_set_constraints=false)
@@ -1380,9 +1414,20 @@ function generate_counterfactual_oa(
     end
 
     solve_time = time() - start_time
+    timing_breakdown[:total] = solve_time
 
     if verbose
         println("-" ^ 70)
+        println("\nTiming Breakdown:")
+        println("  Model build:     $(round(timing_breakdown[:model_build], digits=3))s")
+        println("  Interior search: $(round(timing_breakdown[:interior_point_search], digits=3))s")
+        println("  MILP solving:    $(round(timing_breakdown[:total_milp_solve], digits=3))s")
+        println("  NN evaluations:  $(round(timing_breakdown[:total_nn_eval], digits=3))s")
+        println("  Cut generation:  $(round(timing_breakdown[:total_cut_generation], digits=3))s")
+        if timing_breakdown[:total_bisection] > 0
+            println("    - Bisection:   $(round(timing_breakdown[:total_bisection], digits=3))s")
+        end
+        println("  Total:           $(round(timing_breakdown[:total], digits=3))s")
         println()
     end
 
@@ -1430,7 +1475,8 @@ function generate_counterfactual_oa(
             :upper_bound => UB,
             :iteration_history => iteration_history,
             :ecp_cuts => ecp_cut_count,
-            :esh_cuts => esh_cut_count
+            :esh_cuts => esh_cut_count,
+            :timing_breakdown => timing_breakdown
         )
     else
         if verbose
@@ -1452,7 +1498,8 @@ function generate_counterfactual_oa(
             :upper_bound => UB,
             :iteration_history => iteration_history,
             :ecp_cuts => ecp_cut_count,
-            :esh_cuts => esh_cut_count
+            :esh_cuts => esh_cut_count,
+            :timing_breakdown => timing_breakdown
         )
     end
 end

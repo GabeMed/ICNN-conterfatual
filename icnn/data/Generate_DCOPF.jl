@@ -234,11 +234,11 @@ function DCPM(data, Pd=nothing, Qd=nothing; solver=Gurobi.Optimizer)
 end
 
 function ACPM(data, Pd=nothing, Qd=nothing; solver=Ipopt.Optimizer)
-    # Paso 1: ordenar los IDs de buses y crear el mapa
+    # Step 1: Sort bus IDs and create mapping
     bus_ids = sort(parse.(Int, collect(keys(data["bus"]))))
     bus_idx_map = Dict(bus_id => i for (i, bus_id) in enumerate(bus_ids))
 
-    # step 2  Update the loads 
+    # Step 2: Update the loads 
     if Pd !== nothing && Qd !== nothing
         for (load_id, load_data) in data["load"]
             bus_id = load_data["load_bus"]
@@ -281,30 +281,114 @@ end
 
 
 
-limit_sample = 100 # Number random samples 
-nsamples = 100 # Number until reach lnsamples
+# ============================================================================
+# MAIN EXECUTION SECTION
+# ============================================================================
+# This script can generate:
+# 1. DC-only data (for FICNN - convex problem)
+# 2. AC+DC data (for StandardNN on ACPM - non-convex problem)
+#
+# Set mode to choose which data to generate:
+#   - "DC" : Generate only DC-OPF data (faster, convex)
+#   - "AC+DC" : Generate both AC and DC data (slower, includes non-convex AC)
+# ============================================================================
 
-path_data = "test_systems/data-opf"
+# Configuration
+limit_sample = 5000  # Number of random demand scenarios to generate
+nsamples = 2000      # Number of valid samples desired (target)
+mode = "AC+DC"       # Options: "DC" or "AC+DC"
 
+# Use path relative to this script's directory so it works from any CWD
+path_data = joinpath(@__DIR__, "data-opf")
 system_name = "pglib_opf_case118_ieee"
-
 file_name = joinpath(path_data, "$(system_name).m")
 
+println("\n" * "="^70)
+println("Power Flow Data Generation")
+println("="^70)
+println("Mode: $mode")
+println("System: $system_name")
+println("Samples to generate: $nsamples")
+println("Sample pool: $limit_sample")
+println("="^70)
+
+# Load and prepare power system data
 data = PowerModels.parse_file(file_name)
 PowerModels.standardize_cost_terms!(data, order=2)
 PowerModels.calc_thermal_limits!(data)
 
+# Generate demand samples
 P_samples, Q_samples = generate_truncated_scales(data, limit_sample)
 
-results = run_ac_dc_batch_from_data(data, P_samples, Q_samples, nsamples)
+# Run appropriate generation mode
+if mode == "DC"
+    println("\nGenerating DC-OPF data only (convex problem for FICNN)...")
+    # This function is defined in the original file (removed from Download version)
+    # You need to add run_dc_batch_from_data if not present
+    error("run_dc_batch_from_data function needs to be added for DC-only mode")
+elseif mode == "AC+DC"
+    println("\nGenerating AC+DC-OPF data (non-convex AC problem for StandardNN)...")
+    results = run_ac_dc_batch_from_data(data, P_samples, Q_samples, nsamples)
+else
+    error("Unknown mode: $mode. Use 'DC' or 'AC+DC'")
+end
 
+# Display results summary
+println("\n" * "="^70)
+println("Data Generation Summary")
+println("="^70)
+println("System: $system_name")
+println("Mode: $mode")
+println("Samples generated: $(results["n_valid"]) / $nsamples requested")
+println("Demand dimension: $(size(results["Demand"], 2))")
 
-# Save and load model (save .json)
-# BSON.@save "test_systems/data_$system_name.bson" results
+if mode == "AC+DC"
+    println("\nAC-OPF Statistics:")
+    println("  Objective range: [$(minimum(results["ObjAC"])), $(maximum(results["ObjAC"]))]")
+    println("  Objective std: $(std(results["ObjAC"]))")
+    println("  Mean solve time: $(mean(results["TimeAC"])) seconds")
 
-# k = BSON.load("test_systems/data_$system_name.bson")
+    println("\nDC-OPF Statistics:")
+    println("  Objective range: [$(minimum(results["ObjDC"])), $(maximum(results["ObjDC"]))]")
+    println("  Objective std: $(std(results["ObjDC"]))")
+    println("  Mean solve time: $(mean(results["TimeDC"])) seconds")
 
-# a = k["ObjAC"]
-# b = k["ObjDC"]
-# scatter(a, a)
-# scatter!(a, b)
+    # AC-DC gap analysis
+    ac_dc_gap = (results["ObjAC"] .- results["ObjDC"]) ./ results["ObjAC"] .* 100
+    println("\nAC-DC Gap:")
+    println("  Mean: $(mean(ac_dc_gap))%")
+    println("  Std: $(std(ac_dc_gap))%")
+    println("  Range: [$(minimum(ac_dc_gap))%, $(maximum(ac_dc_gap))%]")
+elseif mode == "DC"
+    println("\nDC-OPF Statistics:")
+    println("  Objective range: [$(minimum(results["ObjDC"])), $(maximum(results["ObjDC"]))]")
+    println("  Objective std: $(std(results["ObjDC"]))")
+end
+
+# Quick quality check
+n_unique = size(unique(results["Demand"], dims=1), 1)
+println("\nQuality Check:")
+println("  Unique samples: $n_unique / $(results["n_valid"])")
+if n_unique < results["n_valid"] * 0.95
+    println("  ⚠️  Warning: Many duplicate samples detected!")
+elseif mode == "AC+DC" && std(results["ObjAC"]) < 100
+    println("  ⚠️  Warning: Low variance in AC objectives!")
+elseif mode == "DC" && std(results["ObjDC"]) < 100
+    println("  ⚠️  Warning: Low variance in DC objectives!")
+else
+    println("  ✅ Data looks good!")
+end
+println("="^70)
+
+# Save results to BSON file
+output_file = joinpath(@__DIR__, "data_$(system_name)_$(mode).bson")
+BSON.@save output_file results
+println("\n✅ Data saved to: $output_file")
+println("\nNext steps:")
+if mode == "AC+DC"
+    println("  - Train StandardNN on ACPM data: julia icnn/examples/train_acpm_standard_nn.jl")
+    println("  - Use ObjAC as target for non-convex AC power flow prediction")
+elseif mode == "DC"
+    println("  - Train FICNN on DCPM data: julia src/train_dcopf.jl")
+    println("  - Use ObjDC as target for convex DC power flow prediction")
+end

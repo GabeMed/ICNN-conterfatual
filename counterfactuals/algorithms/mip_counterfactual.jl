@@ -199,8 +199,13 @@ function generate_counterfactual(icnn_model::FICNN,
                                            time_limit::Float64=300.0,
                                            immutable_indices::Vector{Int}=Int[])
 
+    # Start total timing
+    total_start = time()
+    
     # Current prediction
+    eval_start = time()
     y_current = predict(icnn_model, reshape(x_factual, 1, :))[1, 1]
+    eval_time = time() - eval_start
 
     println("Factual: y = $(round(y_current, digits=4))")
     println("Target: y = $(round(y_target, digits=4)) ± $(epsilon)")
@@ -209,18 +214,28 @@ function generate_counterfactual(icnn_model::FICNN,
     # Check if already at target
     if abs(y_current - y_target) <= epsilon
         println("✓ Already at target!")
+        total_time = time() - total_start
         return Dict(
             :counterfactual => x_factual,
             :distance => 0.0,
             :num_changed => 0,
             :changed_indices => Int[],
             :prediction => y_current,
-            :solve_time => 0.0,
-            :status => :already_at_target
+            :solve_time => total_time,
+            :status => :already_at_target,
+            :timing_breakdown => Dict(
+                :total => total_time,
+                :initial_eval => eval_time,
+                :model_build => 0.0,
+                :mip_solve => 0.0,
+                :result_extraction => 0.0
+            )
         )
     end
 
     # Build MIP model
+    println("Building MIP model...")
+    build_start = time()
     n_features = length(x_factual)
     model, x, y_pred, x_factual_var, delta_pos, delta_neg =
         build_counterfactual_model(
@@ -240,29 +255,39 @@ function generate_counterfactual(icnn_model::FICNN,
 
     # Solver settings
     set_time_limit_sec(model, time_limit)
+    build_time = time() - build_start
+    println("  Model built in $(round(build_time, digits=3))s")
 
     # Solve
     println("Solving MIP...")
-    start_time = time()
+    solve_start = time()
     optimize!(model)
-    solve_time = time() - start_time
+    solve_time = time() - solve_start
+    println("  MIP solved in $(round(solve_time, digits=3))s")
 
     status = termination_status(model)
 
     # Extract solution
     if status in [MOI.OPTIMAL, MOI.FEASIBLE_POINT]
+        extraction_start = time()
         x_cf = value.(x)
         distance = sum(abs.(x_cf .- x_factual))
         y_pred_val = value(y_pred)
         changed_indices = findall(abs.(x_cf .- x_factual) .> 1e-5)
         num_changed = length(changed_indices)
+        extraction_time = time() - extraction_start
+        
+        total_time = time() - total_start
 
         println("✓ Found counterfactual!")
         println("  Distance: $(round(distance, digits=4))")
         println("  Changed features: $num_changed/$(n_features)")
         println("  Predicted value: $(round(y_pred_val, digits=4))")
         println("  Target error: $(round(abs(y_pred_val - y_target), digits=6))")
-        println("  Solve time: $(round(solve_time, digits=2))s")
+        println("  Total time: $(round(total_time, digits=3))s")
+        println("    - Model build: $(round(build_time, digits=3))s")
+        println("    - MIP solve: $(round(solve_time, digits=3))s")
+        println("    - Extraction: $(round(extraction_time, digits=3))s")
 
         if num_changed > 0 && num_changed <= 20
             println("\n  Changed features (showing up to 20):")
@@ -278,13 +303,25 @@ function generate_counterfactual(icnn_model::FICNN,
             :num_changed => num_changed,
             :changed_indices => changed_indices,
             :prediction => y_pred_val,
-            :solve_time => solve_time,
-            :status => status
+            :solve_time => total_time,
+            :status => status,
+            :iterations => 1,  # MILP is single-shot
+            :timing_breakdown => Dict(
+                :total => total_time,
+                :initial_eval => eval_time,
+                :model_build => build_time,
+                :mip_solve => solve_time,
+                :result_extraction => extraction_time
+            )
         )
     else
+        total_time = time() - total_start
+        
         println("✗ No solution found")
         println("  Status: $status")
-        println("  Solve time: $(round(solve_time, digits=2))s")
+        println("  Total time: $(round(total_time, digits=3))s")
+        println("    - Model build: $(round(build_time, digits=3))s")
+        println("    - MIP solve: $(round(solve_time, digits=3))s")
 
         return Dict(
             :counterfactual => nothing,
@@ -292,8 +329,16 @@ function generate_counterfactual(icnn_model::FICNN,
             :num_changed => nothing,
             :changed_indices => nothing,
             :prediction => nothing,
-            :solve_time => solve_time,
-            :status => status
+            :solve_time => total_time,
+            :status => status,
+            :iterations => 1,
+            :timing_breakdown => Dict(
+                :total => total_time,
+                :initial_eval => eval_time,
+                :model_build => build_time,
+                :mip_solve => solve_time,
+                :result_extraction => 0.0
+            )
         )
     end
 end

@@ -150,8 +150,12 @@ for reduction_factor in reduction_factors
                     changed_features = get_changed_features(x_factual, x_cf)
                     n_changed = length(changed_features)
                     
+                    # Extract timing breakdown
+                    timing = get(result, :timing_breakdown, Dict())
+                    
                     println("✓ Success")
                     println("    CF cost: $(round(y_cf, digits=2)), Changed: $n_changed features")
+                    println("    Iterations: $(get(result, :iterations, 1)), Time: $(round(result[:solve_time], digits=3))s")
                     
                     # Store detailed result
                     push!(detailed_results, Dict(
@@ -165,12 +169,14 @@ for reduction_factor in reduction_factors
                         :epsilon => epsilon,
                         :n_features_changed => n_changed,
                         :solve_time => result[:solve_time],
-                        :iterations => get(result, :iterations, missing),
+                        :iterations => get(result, :iterations, 1),
                         :changed_features => JSON.json(changed_features),
-                        :success => true
+                        :success => true,
+                        :timing_breakdown => JSON.json(timing)
                     ))
                 else
                     println("✗ Failed")
+                    timing = get(result, :timing_breakdown, Dict())
                     push!(detailed_results, Dict(
                         :reduction_pct => reduction_factor * 100,
                         :case_idx => case_idx,
@@ -184,7 +190,8 @@ for reduction_factor in reduction_factors
                         :solve_time => result[:solve_time],
                         :iterations => get(result, :iterations, missing),
                         :changed_features => "{}",
-                        :success => false
+                        :success => false,
+                        :timing_breakdown => JSON.json(timing)
                     ))
                 end
                 
@@ -203,7 +210,8 @@ for reduction_factor in reduction_factors
                     :solve_time => missing,
                     :iterations => missing,
                     :changed_features => "{}",
-                    :success => false
+                    :success => false,
+                    :timing_breakdown => "{}"
                 ))
             end
         end
